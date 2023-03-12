@@ -1,0 +1,2 @@
+wget https://raw.githubusercontent.com/andre-motta/ase23/51359ac49fbd212417c51d583d8b299d6045e7d7/final-project/src/Data/h181.csv
+wget https://github.com/llhthinker/MachineLearningLab/blob/master/UCI%20Bank%20Marketing%20Data%20Set/data/bank-additional/bank-additional-full.csv

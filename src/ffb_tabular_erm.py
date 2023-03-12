@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 
-from dataset import load_census_income_kdd_data, load_census_income_kdd_data, load_folktables_income, preprocess_adult_data
+from dataset import load_census_income_kdd_data, load_census_income_kdd_data, load_folktables_income, load_adult_data, load_german_data
 from dataset import load_census_income_kdd_data, load_census_income_kdd_data, load_folktables_income, load_folktables_employment, load_folktables_income_5year, load_folktables_employment_5year
 from utils import seed_everything, PandasDataSet, metric_evaluation
 from networks import MLP
@@ -25,7 +25,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s: - %(message)s', date
 
 
 
-def train(model, train_loader, optimizer, criterion, epoch, device, args=None):
+def train_epoch(model, train_loader, optimizer, criterion, epoch, device, args=None):
     model.train()
     for batch_idx, (data, target, sensitive) in enumerate(train_loader):
         data, target, sensitive = data.to(device), target.to(device), sensitive.to(device)
@@ -43,7 +43,7 @@ def train(model, train_loader, optimizer, criterion, epoch, device, args=None):
 
 
 
-def test(model, test_loader, criterion, device, args=None):
+def test(model, test_loader, criterion, device, args=None, prefix="test"):
     model.eval()
     test_loss = 0
     correct = 0
@@ -64,7 +64,7 @@ def test(model, test_loader, criterion, device, args=None):
     target_hat_list = np.concatenate(target_hat_list, axis=0)
     target_list = np.concatenate(target_list, axis=0)
     sensitive_list = np.concatenate(sensitive_list, axis=0)
-    metric = metric_evaluation( y_gt=target_list, y_pre= target_hat_list, s=sensitive_list, prefix="test_")
+    metric = metric_evaluation( y_gt=target_list, y_pre= target_hat_list, s=sensitive_list, prefix=f"{prefix}_")
 
     test_loss /= len(test_loader.dataset)
 
@@ -75,13 +75,13 @@ def test(model, test_loader, criterion, device, args=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default="/data/han/data/fairness")
-    parser.add_argument('--dataset', type=str, default="adult", choices=["adult", "kdd", "folktables_income", "folktables_employment", "folktables_income_5year", "folktables_employment_5year"] )
+    parser.add_argument('--dataset', type=str, default="adult", choices=["adult", "kdd", "folktables_income", "folktables_employment", "folktables_income_5year", "folktables_employment_5year", "german"] )
     parser.add_argument('--model', type=str, default="MLP")
     parser.add_argument('--target_attr', type=str, default="target")
     parser.add_argument('--sensitive_attr', type=str, default="sex")
 
     parser.add_argument('--epoch', type=int, default=100)
-    parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--num_hidden', type=int, default=128)
@@ -158,10 +158,11 @@ if __name__ == '__main__':
 
     elif dataset_name == "adult":
         logger.info(f'Dataset: adult')
-        X_train, X_val, X_test, y_train, y_val, y_test, A_train, A_val, A_test = preprocess_adult_data(seed=42, path = '/data/han/data/fairness/adult', sensitive_attributes=sensitive_attr)
-        X = pd.DataFrame( np.concatenate( [X_train, X_val, X_test] ) )
-        y = pd.DataFrame( np.concatenate( [y_train, y_val, y_test] ) )[0]
-        s = pd.DataFrame( np.concatenate( [A_train, A_val, A_test] ) )
+        X, y, s = load_adult_data(path = '/data/han/data/fairness/adult', sensitive_attribute=sensitive_attr)
+
+    elif dataset_name == "german":
+        logger.info(f'Dataset: german')
+        X, y, s = load_german_data(path = '../datasets/german/raw', sensitive_attribute=sensitive_attr)
 
 
     elif dataset_name == "kdd":
@@ -175,8 +176,8 @@ if __name__ == '__main__':
     logger.info(f'X.shape: {X.shape}')
     logger.info(f'y.shape: {y.shape}')
     logger.info(f's.shape: {s.shape}')
-    logger.info(f's.shape: {s.value_counts().to_dict()}')
-    logger.info(f's.shape: {y.value_counts().to_dict()}')
+    logger.info(f's.value_counts(): {s.value_counts().to_dict()}')
+    logger.info(f'y.value_counts(): {y.value_counts().to_dict()}')
 
 
 
@@ -184,9 +185,11 @@ if __name__ == '__main__':
     n_classes = len(np.unique(y))
 
     # split into train/val/test set
-    X_train, X_test, y_train, y_test, s_train, s_test = train_test_split(X, y, s, test_size=0.2, stratify=y, random_state=seed)
-    X_train, X_val, y_train, y_val, s_train, s_val = train_test_split(X_train, y_train, s_train, test_size=0.1 / 0.8, stratify=y_train, random_state=seed)
+    # X_train, X_test, y_train, y_test, s_train, s_test = train_test_split(X, y, s, test_size=0.2, stratify=y, random_state=seed)
+    # X_train, X_val, y_train, y_val, s_train, s_val = train_test_split(X_train, y_train, s_train, test_size=0.1 / 0.8, stratify=y_train, random_state=seed)
 
+    X_train, X_test, y_train, y_test, s_train, s_test = train_test_split(X, y, s, test_size=0.2, stratify=y, random_state=seed)
+    X_train, X_val, y_train, y_val, s_train, s_val = train_test_split(X_train, y_train, s_train, test_size=0.2 / 0.8, stratify=y_train, random_state=seed)
 
     logger.info(f'X_train.shape: {X_train.shape}, y_train.shape: {y_train.shape}, s_train.shape: {s_train.shape}')
     logger.info(f'X_val.shape: {X_val.shape}, y_val.shape: {y_val.shape}, s_val.shape: {s_val.shape}')
@@ -217,11 +220,11 @@ if __name__ == '__main__':
 
 
     for epoch in range(num_epochs):
-        clf = train(model=clf, train_loader=train_loader, optimizer=clf_optimizer, criterion=clf_criterion, epoch=epoch, device=device, args=args )
+        clf = train_epoch(model=clf, train_loader=train_loader, optimizer=clf_optimizer, criterion=clf_criterion, epoch=epoch, device=device, args=args )
 
-        test(model=clf, test_loader=train_loader, criterion=clf_criterion, device=device, args=None)
-        test(model=clf, test_loader=val_loader, criterion=clf_criterion, device=device, args=None)
-        test(model=clf, test_loader=test_loader, criterion=clf_criterion, device=device, args=None)
+        test(model=clf, test_loader=train_loader, criterion=clf_criterion, device=device, args=None, prefix='train')
+        test(model=clf, test_loader=val_loader, criterion=clf_criterion, device=device, args=None, prefix='val')
+        test(model=clf, test_loader=test_loader, criterion=clf_criterion, device=device, args=None, prefix='test')
 
 
     logger.info(f"done experiment")
