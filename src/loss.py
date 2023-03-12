@@ -47,12 +47,13 @@ class gap_reg(torch.nn.Module):
 def pairwise_distances(x):
     # x should be two dimensional
     instances_norm = torch.sum(x**2, -1).reshape((-1, 1))
-    return -2*torch.mm(x, x.t()) + instances_norm + instances_norm.t()
+    return -2 * torch.mm(x, x.t()) + instances_norm + instances_norm.t()
 
 
 def GaussianKernelMatrix(x, sigma=1):
     pairwise_distances_ = pairwise_distances(x)
     return torch.exp(-pairwise_distances_ / sigma)
+
 
 # Loss  PRLoss
 
@@ -67,10 +68,10 @@ class HSIC(torch.nn.Module):  # using linear
         m, _ = x.shape  # batch size
         K = GaussianKernelMatrix(x, self.s_x).cuda()
         L = GaussianKernelMatrix(y, self.s_y).cuda()
-        H = torch.eye(m) - 1.0/m * torch.ones((m, m))
+        H = torch.eye(m) - 1.0 / m * torch.ones((m, m))
         # H = H.double().cuda()
         H = H.cuda()
-        HSIC = torch.trace(torch.mm(L, torch.mm(H, torch.mm(K, H))))/((m-1)**2)
+        HSIC = torch.trace(torch.mm(L, torch.mm(H, torch.mm(K, H)))) / ((m - 1) ** 2)
         return HSIC, torch.Tensor([0])
 
 
@@ -102,23 +103,26 @@ class PRLoss(torch.nn.Module):  # using linear
         P_y = torch.sum(P) / y_pred.shape[0]
         # P(siyi)
         P_s1y1 = torch.log(P_ys[1]) - torch.log(P_y)
-        P_s1y0 = torch.log(1-P_ys[1]) - torch.log(1-P_y)
+        P_s1y0 = torch.log(1 - P_ys[1]) - torch.log(1 - P_y)
         P_s0y1 = torch.log(P_ys[0]) - torch.log(P_y)
-        P_s0y0 = torch.log(1-P_ys[0]) - torch.log(1-P_y)
+        P_s0y0 = torch.log(1 - P_ys[0]) - torch.log(1 - P_y)
         # PI
         PI_s1y1 = output_f * P_s1y1
         PI_s1y0 = (1 - output_f) * P_s1y0
         PI_s0y1 = output_m * P_s0y1
         PI_s0y0 = (1 - output_m) * P_s0y0
-        PI = torch.sum(PI_s1y1) + torch.sum(PI_s1y0) + \
-            torch.sum(PI_s0y1) + torch.sum(PI_s0y0)
+        PI = (
+            torch.sum(PI_s1y1)
+            + torch.sum(PI_s1y0)
+            + torch.sum(PI_s0y1)
+            + torch.sum(PI_s0y0)
+        )
         # PI = self.eta * PI
         return PI, torch.Tensor([0])
 
 
 def sigma_estimation(X, Y):
-    """ sigma from median distance
-    """
+    """sigma from median distance"""
     D = distmat(torch.cat([X, Y]))
     D = D.detach().cpu().numpy()
     Itri = np.tril_indices(D.shape[0], -1)
@@ -126,42 +130,43 @@ def sigma_estimation(X, Y):
     med = np.median(Tri)
     if med <= 0:
         med = np.mean(Tri)
-    if med < 1E-2:
-        med = 1E-2
+    if med < 1e-2:
+        med = 1e-2
     return med
 
 
 def distmat(X):
-    """ distance matrix
-    """
-    r = torch.sum(X*X, 1)
+    """distance matrix"""
+    r = torch.sum(X * X, 1)
     r = r.view([-1, 1])
     a = torch.mm(X, torch.transpose(X, 0, 1))
-    D = r.expand_as(a) - 2*a + torch.transpose(r, 0, 1).expand_as(a)
+    D = r.expand_as(a) - 2 * a + torch.transpose(r, 0, 1).expand_as(a)
     D = torch.abs(D)
     return D
 
 
 def kernelmat(X, sigma):
-    """ kernel matrix baker
-    """
+    """kernel matrix baker"""
     m = int(X.size()[0])
     dim = int(X.size()[1]) * 1.0
-    H = torch.eye(m) - (1./m) * torch.ones([m, m])
+    H = torch.eye(m) - (1.0 / m) * torch.ones([m, m])
     Dxx = distmat(X)
 
     if sigma:
-        variance = 2.*sigma*sigma*X.size()[1]
+        variance = 2.0 * sigma * sigma * X.size()[1]
         # kernel matrices
         Kx = torch.exp(-Dxx / variance).type(torch.FloatTensor)
         # print(sigma, torch.mean(Kx), torch.max(Kx), torch.min(Kx))
     else:
         try:
             sx = sigma_estimation(X, X)
-            Kx = torch.exp(-Dxx / (2.*sx*sx)).type(torch.FloatTensor)
+            Kx = torch.exp(-Dxx / (2.0 * sx * sx)).type(torch.FloatTensor)
         except RuntimeError as e:
-            raise RuntimeError("Unstable sigma {} with maximum/minimum input ({},{})".format(
-                sx, torch.max(X), torch.min(X)))
+            raise RuntimeError(
+                "Unstable sigma {} with maximum/minimum input ({},{})".format(
+                    sx, torch.max(X), torch.min(X)
+                )
+            )
 
     Kxc = torch.mm(Kx, H)
 
@@ -170,7 +175,7 @@ def kernelmat(X, sigma):
 
 def distcorr(X, sigma=1.0):
     X = distmat(X)
-    X = torch.exp(-X / (2.*sigma*sigma))
+    X = torch.exp(-X / (2.0 * sigma * sigma))
     return torch.mean(X)
 
 
@@ -182,41 +187,40 @@ def compute_kernel(x, y):
     y = y.unsqueeze(0)  # (1, y_size, dim)
     tiled_x = x.expand(x_size, y_size, dim)
     tiled_y = y.expand(x_size, y_size, dim)
-    kernel_input = (tiled_x - tiled_y).pow(2).mean(2)/float(dim)
+    kernel_input = (tiled_x - tiled_y).pow(2).mean(2) / float(dim)
     return torch.exp(-kernel_input)  # (x_size, y_size)
 
 
 def mmd(x, y, sigma=None, use_cuda=True, to_numpy=False):
     m = int(x.size()[0])
-    H = torch.eye(m) - (1./m) * torch.ones([m, m])
+    H = torch.eye(m) - (1.0 / m) * torch.ones([m, m])
     # H = Variable(H)
     Dxx = distmat(x)
     Dyy = distmat(y)
 
     if sigma:
-        Kx = torch.exp(-Dxx / (2.*sigma*sigma))   # kernel matrices
-        Ky = torch.exp(-Dyy / (2.*sigma*sigma))
+        Kx = torch.exp(-Dxx / (2.0 * sigma * sigma))  # kernel matrices
+        Ky = torch.exp(-Dyy / (2.0 * sigma * sigma))
         sxy = sigma
     else:
         sx = sigma_estimation(x, x)
         sy = sigma_estimation(y, y)
         sxy = sigma_estimation(x, y)
-        Kx = torch.exp(-Dxx / (2.*sx*sx))
-        Ky = torch.exp(-Dyy / (2.*sy*sy))
+        Kx = torch.exp(-Dxx / (2.0 * sx * sx))
+        Ky = torch.exp(-Dyy / (2.0 * sy * sy))
     # Kxc = torch.mm(Kx,H)            # centered kernel matrices
     # Kyc = torch.mm(Ky,H)
     Dxy = distmat(torch.cat([x, y]))
-    Dxy = Dxy[:x.size()[0], x.size()[0]:]
-    Kxy = torch.exp(-Dxy / (1.*sxy*sxy))
+    Dxy = Dxy[: x.size()[0], x.size()[0] :]
+    Kxy = torch.exp(-Dxy / (1.0 * sxy * sxy))
 
-    mmdval = torch.mean(Kx) + torch.mean(Ky) - 2*torch.mean(Kxy)
+    mmdval = torch.mean(Kx) + torch.mean(Ky) - 2 * torch.mean(Kxy)
 
     return mmdval
 
 
 def mmd_pxpy_pxy(x, y, sigma=None, use_cuda=True, to_numpy=False):
-    """
-    """
+    """ """
     if use_cuda:
         x = x.cuda()
         y = y.cuda()
@@ -225,24 +229,23 @@ def mmd_pxpy_pxy(x, y, sigma=None, use_cuda=True, to_numpy=False):
     Dxx = distmat(x)
     Dyy = distmat(y)
     if sigma:
-        Kx = torch.exp(-Dxx / (2.*sigma*sigma))   # kernel matrices
-        Ky = torch.exp(-Dyy / (2.*sigma*sigma))
+        Kx = torch.exp(-Dxx / (2.0 * sigma * sigma))  # kernel matrices
+        Ky = torch.exp(-Dyy / (2.0 * sigma * sigma))
     else:
         sx = sigma_estimation(x, x)
         sy = sigma_estimation(y, y)
         sxy = sigma_estimation(x, y)
-        Kx = torch.exp(-Dxx / (2.*sx*sx))
-        Ky = torch.exp(-Dyy / (2.*sy*sy))
-    A = torch.mean(Kx*Ky)
-    B = torch.mean(torch.mean(Kx, dim=0)*torch.mean(Ky, dim=0))
-    C = torch.mean(Kx)*torch.mean(Ky)
-    mmd_pxpy_pxy_val = A - 2*B + C
+        Kx = torch.exp(-Dxx / (2.0 * sx * sx))
+        Ky = torch.exp(-Dyy / (2.0 * sy * sy))
+    A = torch.mean(Kx * Ky)
+    B = torch.mean(torch.mean(Kx, dim=0) * torch.mean(Ky, dim=0))
+    C = torch.mean(Kx) * torch.mean(Ky)
+    mmd_pxpy_pxy_val = A - 2 * B + C
     return mmd_pxpy_pxy_val
 
 
 def hsic_regular(x, y, sigma=None, use_cuda=True, to_numpy=False):
-    """
-    """
+    """ """
     Kxc = kernelmat(x, sigma)
     Kyc = kernelmat(y, sigma)
     KtK = torch.mul(Kxc, Kyc.t())
@@ -251,29 +254,27 @@ def hsic_regular(x, y, sigma=None, use_cuda=True, to_numpy=False):
 
 
 def hsic_normalized(x, y, sigma=None, use_cuda=True, to_numpy=True):
-    """
-    """
+    """ """
     m = int(x.size()[0])
     Pxy = hsic_regular(x, y, sigma, use_cuda)
     Px = torch.sqrt(hsic_regular(x, x, sigma, use_cuda))
     Py = torch.sqrt(hsic_regular(y, y, sigma, use_cuda))
-    thehsic = Pxy/(Px*Py)
+    thehsic = Pxy / (Px * Py)
     return thehsic
 
 
 def hsic_normalized_cca(x, y, sigma, use_cuda=True, to_numpy=True):
-    """
-    """
+    """ """
     m = int(x.size()[0])
     Kxc = kernelmat(x, sigma=sigma)
     Kyc = kernelmat(y, sigma=sigma)
 
-    epsilon = 1E-5
+    epsilon = 1e-5
     K_I = torch.eye(m)
-    Kxc_i = torch.inverse(Kxc + epsilon*m*K_I)
-    Kyc_i = torch.inverse(Kyc + epsilon*m*K_I)
-    Rx = (Kxc.mm(Kxc_i))
-    Ry = (Kyc.mm(Kyc_i))
+    Kxc_i = torch.inverse(Kxc + epsilon * m * K_I)
+    Kyc_i = torch.inverse(Kyc + epsilon * m * K_I)
+    Rx = Kxc.mm(Kxc_i)
+    Ry = Kyc.mm(Kyc_i)
     Pxy = torch.sum(torch.mul(Rx, Ry.t()))
 
     return Pxy
