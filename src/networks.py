@@ -1,16 +1,11 @@
-from torch._C import set_flush_denormal
 import torchvision
 import torch
 import torch.nn as nn
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
 import torch.nn.functional as F
 
 
 
-class MLP( nn.Module ):  # pretrain the classifier to make income predictions.
+class MLP( nn.Module ):
 
     def __init__(self, n_features, n_hidden=256, p_dropout=0.2, num_classes=1, num_layers=4):
         super(MLP, self).__init__()
@@ -52,39 +47,20 @@ class Identity(nn.Module):
 
 
 class ResNet18_Encoder(nn.Module):
-    def __init__(self, pretrained, n_hidden=128):
+    def __init__(self, pretrained, n_hidden=512):
         super().__init__()
         self.resnet = torchvision.models.resnet18(pretrained=pretrained)
         self.resnet.fc = Identity()
-        # self.resnet.avgpool = Identity()
-        # self.resnet.fc = nn.Linear(512, n_hidden)
-        # self.fc1 = nn.Linear(1000, n_hidden)
         self.fc = nn.Linear(512, 1)
 
         # self.layer_norm = nn.LayerNorm(n_hidden, elementwise_affine=False)
 
     def forward(self, x):
         x = self.resnet(x)
-
+        h = x
         x = self.fc(x)
         x = torch.sigmoid(x)
-        return x
-
-
-# class LinearModel(nn.Module):
-#     def __init__(self):
-#         super(LinearModel, self).__init__()
-#         # self.fc1 = nn.Linear(512, 512)
-#         self.fc2 = nn.Linear(128, 1)
-#         self.relu = nn.ReLU()
-#         self.avg = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-
-#     def forward(self, x):
-#         # x = self.avg(x).view(-1, 512)
-#         # x = self.fc1(x)
-#         x = self.relu(x)
-#         outputs = self.fc2(x)
-#         return torch.sigmoid(outputs)
+        return h, x
 
 
 
@@ -93,26 +69,59 @@ class ResNet50_Encoder(nn.Module):
         super().__init__()
         # self.resnet = torchvision.models.resnet18(pretrained=pretrained)
         self.resnet = torchvision.models.resnet50(pretrained=pretrained)
-        # self.resnet.fc = Identity()
-        # self.resnet.avgpool = Identity()
-        self.resnet.fc = nn.Linear(2048, n_hidden)
-        # self.fc1 = nn.Linear(1000, n_hidden)
+        self.resnet.fc = Identity()
         self.fc = nn.Linear(n_hidden, 1)
-
-        self.layer_norm = nn.LayerNorm(n_hidden, elementwise_affine=False)
 
     def forward(self, x):
         x = self.resnet(x)
-
-        # x = self.fc1( x )
-        # x = self.relu(x)
-        # print( "outputs", outputs.shape )
-        # return outputs.view(-1, 512, 8, 8)
-        # x = torch.sigmoid(x)
-        x = F.relu(x)
-        h = self.layer_norm(x)
-        h1 = F.normalize(h, p=2)
-
+        h = x
         x = self.fc(x)
         x = torch.sigmoid(x)
-        return h1, x
+        return h, x
+
+
+class ResNet152_Encoder(nn.Module):
+    def __init__(self, pretrained, n_hidden=128):
+        super().__init__()
+        # self.resnet = torchvision.models.resnet18(pretrained=pretrained)
+        self.resnet = torchvision.models.resnet152(pretrained=pretrained)
+        self.resnet.fc = Identity()
+        self.fc = nn.Linear(n_hidden, 1)
+
+    def forward(self, x):
+        x = self.resnet(x)
+        h = x
+        x = self.fc(x)
+        x = torch.sigmoid(x)
+        return h, x
+
+
+class vit_encoder(nn.Module):
+    def __init__(self, pretrained, n_hidden=128):
+        super().__init__()
+        # self.resnet = torchvision.models.resnet18(pretrained=pretrained)
+        self.vit = torchvision.models.vit_base_patch16_224(pretrained=pretrained)
+        self.vit.fc = Identity()
+        self.fc = nn.Linear(n_hidden, 1)
+
+    def forward(self, x):
+        x = self.vit(x)
+        h = x
+        x = self.fc(x)
+        x = torch.sigmoid(x)
+        return h, x
+
+class swin_encoder(nn.Module):
+    def __init__(self, pretrained, n_hidden=128):
+        super().__init__()
+        # self.resnet = torchvision.models.resnet18(pretrained=pretrained)
+        self.swin = torchvision.models.swin_base_patch4_window7_224(pretrained=pretrained)
+        self.swin.fc = Identity()
+        self.fc = nn.Linear(n_hidden, 1)
+
+    def forward(self, x):
+        x = self.swin(x)
+        h = x
+        x = self.fc(x)
+        x = torch.sigmoid(x)
+        return h, x

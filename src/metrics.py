@@ -21,6 +21,8 @@ def ABPC(y_pred, y_gt, sensitive_attribute, bw_method="scott", sample_n=5000):
     # area under the lower kde, from the first leftmost point to the first intersection point
     abpc = np.trapz(np.abs(kde0_x - kde1_x), x)
 
+    abpc *= 100
+
     return abpc
 
 
@@ -41,6 +43,8 @@ def ABCC(y_pred, y_gt, sensitive_attribute):
 
     # area under the lower kde, from the first leftmost point to the first intersection point
     abcc = np.trapz(np.abs(ecdf0_x - ecdf1_x), x)
+
+    abcc *= 100
 
     return abcc
 
@@ -84,6 +88,7 @@ def demographic_parity(y_pred, sensitive_attribute, threshold=0.5):
     y_z_1 = y_pred[sensitive_attribute == 1] > threshold if threshold else y_pred[sensitive_attribute == 1]
     y_z_0 = y_pred[sensitive_attribute == 0] > threshold if threshold else y_pred[sensitive_attribute == 0]
     parity = abs(y_z_1.mean() - y_z_0.mean())
+    parity *= 100
     return parity
 
 
@@ -93,6 +98,7 @@ def equal_opportunity(y_pred, y_gt, sensitive_attribute, threshold=0.5):
     y_z_1 = y_pred[sensitive_attribute == 1] > threshold if threshold else y_pred[sensitive_attribute == 1]
     y_z_0 = y_pred[sensitive_attribute == 0] > threshold if threshold else y_pred[sensitive_attribute == 0]
     equality = abs(y_z_1.mean() - y_z_0.mean())
+    equality *= 100
     return equality
 
 
@@ -113,6 +119,8 @@ def equalized_odds(y_pred, y_gt, sensitive_attribute, threshold=0.5):
     y_z_1 = y_pred[sensitive_attribute == 1] > threshold if threshold else y_pred[sensitive_attribute == 1]
     y_z_0 = y_pred[sensitive_attribute == 0] > threshold if threshold else y_pred[sensitive_attribute == 0]
     equality += abs(y_z_1.mean() - y_z_0.mean())
+
+    equality *= 100
     return equality
 
 
@@ -138,23 +146,42 @@ def metric_evaluation(y_gt, y_pre, s, s_pre=None, prefix=""):
 
     accuracy = metrics.accuracy_score(y_gt, y_pre > 0.5) * 100
     ap = metrics.average_precision_score(y_gt, y_pre) * 100
+    precision = metrics.precision_score(y_gt, y_pre > 0.5) * 100
+    recall = metrics.recall_score(y_gt, y_pre > 0.5) * 100
+    f1 = metrics.f1_score(y_gt, y_pre > 0.5) * 100
     auc = metrics.roc_auc_score(y_gt, y_pre) * 100
+
     dp = demographic_parity(y_pre, s, threshold=0.5)
     dpe = demographic_parity(y_pre, s, threshold=None)
     dpauc = demographic_parity_auc(y_pre, y_gt, s)
-    eo = equal_opportunity(y_pre, y_gt, s, threshold=0.5)
-    eoe = equal_opportunity(y_pre, y_gt, s, threshold=None)
-    prule = p_rule(y_pre, s)
+
+    prule = p_rule(y_pre, s, threshold=0.5)
     prulee = p_rule(y_pre, s, threshold=None)
+
+    eopp = equal_opportunity(y_pre, y_gt, s, threshold=0.5)
+    eoppe = equal_opportunity(y_pre, y_gt, s, threshold=None)
+    eodd = equalized_odds(y_pre, y_gt, s, threshold=0.5)
+    eodde = equalized_odds(y_pre, y_gt, s, threshold=None)
+
     abpc = ABPC(y_pre, y_gt, s)
     abcc = ABCC(y_pre, y_gt, s)
     # avg_alpha, af_list = alpha_fairness_metric( y_pre, y_gt, s, s_pre, sample_n=10, threshold=None )
 
-    metric_name = ["accuracy", "ap", "auc", "dp", "dpe", "dpauc", "eo", "eoe", "prule", "prulee", "abpc", "abcc"]
+    metric_name = ["accuracy", "ap", "precision", "recall", "f1", "auc", "dp", "dpe", "dpauc", "eopp", "eoppe", "eodd", "eodde", "prule", "prulee", "abpc", "abcc"]
     metric_name = [prefix + x for x in metric_name]
-    metric_val = [accuracy, ap, auc, dp, dpe, dpauc, eo, eoe, prule, prulee, abpc, abcc]
+    metric_val = [accuracy, ap, precision, recall, f1, auc, dp, dpe, dpauc, eopp, eoppe, eodd, eodde, prule, prulee, abpc, abcc]
 
     return dict(zip(metric_name, metric_val))
+
+
+
+
+
+
+
+
+
+
 
 
 def acc_metric_evaluation(y_gt, y_pre, prefix=""):
@@ -181,16 +208,18 @@ def fairness_metric_evaluation(y_gt, y_pre, s, s_pre, prefix=""):
     dp = demographic_parity(y_pre, s)
     dpe = demographic_parity(y_pre, s, threshold=None)
     dpauc = demographic_parity_auc(y_pre, y_gt, s)
-    eo = equal_opportunity(y_pre, y_gt, s)
-    eoe = equal_opportunity(y_pre, y_gt, s, threshold=None)
+    eopp = equal_opportunity(y_pre, y_gt, s)
+    eoppe = equal_opportunity(y_pre, y_gt, s, threshold=None)
+    eodd = equalized_odds(y_pre, y_gt, s)
+    eodde = equalized_odds(y_pre, y_gt, s, threshold=None)
     prule = p_rule(y_pre, s)
     prulee = p_rule(y_pre, s, threshold=None)
     abpc = ABPC(y_pre, y_gt, s)
     abcc = ABCC(y_pre, y_gt, s)
 
-    metric_name = ["dp", "dpe", "dpauc", "eo", "eoe", "prule", "prulee", "abpc", "abcc"]
+    metric_name = ["dp", "dpe", "dpauc", "eopp", "eoppe", "eodd", "eodde" "prule", "prulee", "abpc", "abcc"]
     metric_name = [prefix + x for x in metric_name]
-    metric_val = [dp, dpe, dpauc, eo, eoe, prule, prulee, abpc, abcc]
+    metric_val = [dp, dpe, dpauc, eopp, eoppe, eodd, eodde, prule, prulee, abpc, abcc]
 
     return dict(zip(metric_name, metric_val))
 
