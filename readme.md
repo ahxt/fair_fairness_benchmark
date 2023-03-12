@@ -21,6 +21,35 @@ To install the Fair Fairness Benchmark, simply clone this repository and install
 pip install -r requirements.txt
 ```
 
+## Datasets
+- Adult
+- German
+- Compas
+- Bank Marketing
+- KDD
+- ACS
+- CelebA
+- UTKFace
+
+
+## Backbone
+- MLP
+- ResNet
+
+## In-Processing Group Fairness Method
+- DiffDP
+- DiffEOpp
+- DiffEodd
+- MMDLoss
+- MeanLoss
+- CorrLoss
+- Adv
+
+
+
+## Benchmark
+
+
 ## Contributing
 We welcome contributions from the research community to improve and extend the Fair Fairness Benchmark. If you have an idea for a new metric or algorithm, or would like to report a bug, please open an issue or submit a pull request.
 

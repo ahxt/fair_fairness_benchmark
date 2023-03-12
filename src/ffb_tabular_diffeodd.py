@@ -12,22 +12,24 @@ import pandas as pd
 from table_logger import TableLogger
 
 
-from dataset import load_census_income_kdd_data,load_census_income_kdd_data,load_folktables_income,load_adult_data,load_german_data, load_compas_data, load_german_data, load_bank_marketing_data
+from dataset import load_census_income_kdd_data,load_census_income_kdd_data,load_folktables_income,load_adult_data,load_german_data, load_german_data, load_bank_marketing_data
 from dataset import load_census_income_kdd_data,load_census_income_kdd_data,load_folktables_income,load_folktables_employment,load_folktables_income_5year,load_folktables_employment_5year
 from utils import seed_everything, PandasDataSet
 from metrics import metric_evaluation
 from networks import MLP
 
+from loss import DiffEOdd
 
 
-
-def train_epoch(model, train_loader, optimizer, criterion, device, args=None):
+def train_epoch(model, train_loader, optimizer, clf_criterion, fair_criterion, lambda1, device, args=None):
     model.train()
     for batch_idx, (data, target, sensitive) in enumerate(train_loader):
         data, target, sensitive = data.to(device), target.to(device), sensitive.to(device)
         optimizer.zero_grad()
         h, output = model(data)
-        loss = criterion(output, target)
+        clf_loss = clf_criterion(output, target)
+        fair_loss = fair_criterion(output, sensitive, target)
+        loss = clf_loss + lambda1 * fair_loss
         loss.backward()
         optimizer.step()
     return model
@@ -73,6 +75,8 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--num_hidden", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=4)
+
+    parser.add_argument("--lambda1", type=float, default=1.0)
 
     parser.add_argument("--seed", type=int, default=1314)
     parser.add_argument("--exp_name", type=str, default="fair_fairness_benchmark")
@@ -156,6 +160,7 @@ if __name__ == "__main__":
 
     clf = MLP(n_features=n_features, n_hidden=args.num_hidden, num_layers=args.num_layers).to(device)
     clf_criterion = nn.BCELoss()
+    fair_criterion = DiffEOdd()
     clf_optimizer = optim.Adam(clf.parameters(), lr=args.lr)
 
     print(clf)
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     tbl = TableLogger(columns='Epoch,Acc(Tr|Val|Te),Ap, AUC, DP, prule, Eopp, Eodd, ABPC, ABCC', float_format='{:,.2f}'.format, colwidth={0: 5, 1: 17, 2: 17, 3: 17, 4: 17, 5: 17, 6: 17, 7: 17, 8: 17})
 
     for epoch in range(1, args.num_epochs+1):
-        clf = train_epoch(model=clf, train_loader=train_loader, optimizer=clf_optimizer, criterion=clf_criterion, device=device)
+        clf = train_epoch(model=clf, train_loader=train_loader, optimizer=clf_optimizer, clf_criterion=clf_criterion, fair_criterion=fair_criterion, lambda1=args.lambda1, device=device)
 
         if epoch % 5 == 0 or epoch == 1 or epoch == args.num_epochs:
             train_metrics = test(model=clf, test_loader=train_loader, criterion=clf_criterion, device=device,  prefix="train")

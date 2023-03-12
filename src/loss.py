@@ -25,24 +25,64 @@ from sklearn.decomposition import KernelPCA
 from sklearn.decomposition import PCA
 
 
-class gap_reg(torch.nn.Module):
-    def __init__(self, mode="dp"):
-        super(gap_reg, self).__init__()
-        self.mode = mode
+class DiffEOdd(torch.nn.Module):
+    def __init__(self):
+        super(DiffEOdd, self).__init__()
 
     def forward(self, y_pred, s, y_gt):
         y_pred = y_pred.reshape(-1)
         s = s.reshape(-1)
         y_gt = y_gt.reshape(-1)
 
-        if self.mode == "eo":
-            y_pred = y_pred[y_gt == 1]
-            s = s[y_gt == 1]
+        y_pred_y1 = y_pred[y_gt == 1]
+        s_y1 = s[y_gt == 1]
+        
+        y0 = y_pred_y1[s_y1 == 0]
+        y1 = y_pred_y1[s_y1 == 1]
+        reg_loss_y1 = torch.abs(torch.mean(y0) - torch.mean(y1))
+
+        y_pred_y0 = y_pred[y_gt == 0]
+        s_y0 = s[y_gt == 0]
+        
+        y0 = y_pred_y0[s_y0 == 0]
+        y1 = y_pred_y0[s_y0 == 1]
+        reg_loss_y0 = torch.abs(torch.mean(y0) - torch.mean(y1))
+
+        reg_loss = reg_loss_y1 + reg_loss_y0
+        return reg_loss
+
+
+
+class DiffEOpp(torch.nn.Module):
+    def __init__(self):
+        super(DiffEOpp, self).__init__()
+
+    def forward(self, y_pred, s, y_gt):
+        y_pred = y_pred.reshape(-1)
+        s = s.reshape(-1)
+        y_gt = y_gt.reshape(-1)
+
+        y_pred = y_pred[y_gt == 1]
+        s = s[y_gt == 1]
+
         y0 = y_pred[s == 0]
         y1 = y_pred[s == 1]
         reg_loss = torch.abs(torch.mean(y0) - torch.mean(y1))
-        return reg_loss, torch.Tensor([0]), torch.Tensor([0]), torch.Tensor([0])
+        return reg_loss
 
+
+class DiffDP(torch.nn.Module):
+    def __init__(self):
+        super(DiffDP, self).__init__()
+
+    def forward(self, y_pred, s):
+        y_pred = y_pred.reshape(-1)
+        s = s.reshape(-1)
+
+        y0 = y_pred[s == 0]
+        y1 = y_pred[s == 1]
+        reg_loss = torch.abs(torch.mean(y0) - torch.mean(y1))
+        return reg_loss
 
 def pairwise_distances(x):
     # x should be two dimensional
