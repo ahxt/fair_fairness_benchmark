@@ -72,9 +72,7 @@ def GaussianKernelMatrix(x, sigma=1):
     return torch.exp(-pairwise_distances_ / sigma)
 
 
-# Loss  PRLoss
-
-
+# Loss  HSIC
 class HSIC(torch.nn.Module):  # using linear
     def __init__(self, s_x=1, s_y=1):
         super(HSIC, self).__init__()
@@ -92,37 +90,42 @@ class HSIC(torch.nn.Module):  # using linear
         return HSIC, torch.Tensor([0])
 
 
+
 # Loss  PRLoss
-class PRLoss(torch.nn.Module):  # using linear
-    def __init__(self, eta=1.0):
+class PRLoss(torch.nn.Module):
+    def __init__(self):
         super(PRLoss, self).__init__()
-        self.eta = eta
 
-    # def forward(self, output_f, output_m):
 
-    def forward(self, y_pred, s, y_gt):
+    def forward(self, y_pred, s):
         output_f = y_pred[s == 0]
         output_m = y_pred[s == 1]
 
         # For the mutual information,
         # Pr[y|s] = sum{(xi,si),si=s} sigma(xi,si) / #D[xs]
+        
         # D[xs]
         N_female = torch.tensor(output_f.shape[0]).to("cuda")
         N_male = torch.tensor(output_m.shape[0]).to("cuda")
+
         # male sample, #female sample
         Dxisi = torch.stack((N_male, N_female), axis=0)
+
         # Pr[y|s]
         y_pred_female = torch.sum(output_f)
         y_pred_male = torch.sum(output_m)
         P_ys = torch.stack((y_pred_male, y_pred_female), axis=0) / Dxisi
+
         # Pr[y]
         P = torch.cat((output_f, output_m), 0)
         P_y = torch.sum(P) / y_pred.shape[0]
+
         # P(siyi)
         P_s1y1 = torch.log(P_ys[1]) - torch.log(P_y)
         P_s1y0 = torch.log(1 - P_ys[1]) - torch.log(1 - P_y)
         P_s0y1 = torch.log(P_ys[0]) - torch.log(P_y)
         P_s0y0 = torch.log(1 - P_ys[0]) - torch.log(1 - P_y)
+
         # PI
         PI_s1y1 = output_f * P_s1y1
         PI_s1y0 = (1 - output_f) * P_s1y0
@@ -134,8 +137,8 @@ class PRLoss(torch.nn.Module):  # using linear
             + torch.sum(PI_s0y1)
             + torch.sum(PI_s0y0)
         )
-        # PI = self.eta * PI
-        return PI, torch.Tensor([0])
+        return PI
+
 
 
 def sigma_estimation(X, Y):
