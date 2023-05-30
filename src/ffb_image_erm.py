@@ -15,11 +15,10 @@ import torchvision
 from torchvision import transforms
 from torch.utils.data import TensorDataset
 
-from dataset import load_census_income_kdd_data,load_census_income_kdd_data,load_adult_data,load_german_data, load_compas_data, load_german_data, load_bank_marketing_data, load_acs_data, load_utkface_data
+from dataset import load_utkface_data, load_celeba_data
 from utils import seed_everything, PandasDataSet, print_metrics, clear_lines, InfiniteDataLoader
 from metrics import metric_evaluation
 from networks import MLP, resnet18_encoder, resnet152_encoder, resnet101_encoder, resnet34_encoder, resnet50_encoder, resnext101_32x8d_encoder, resnext50_32x4d_encoder, wide_resnet101_2_encoder, wide_resnet50_2_encoder, swin_t_encoder
-from tqdm import tqdm
 
 
 tfms = transforms.Compose([
@@ -86,10 +85,10 @@ def test(model, test_loader, criterion, device, target_index = 31, sensitive_ind
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="../datasets/adult/raw", help="Path to the dataset folder")
+    parser.add_argument("--data_path", type=str, default="../datasets/", help="Path to the dataset folder")
     parser.add_argument("--dataset", type=str, default="utkface", choices=["utkface","celeba"], help="Choose a dataset from the available options: utkface, celeba, acs")
     parser.add_argument("--model", type=str, default="erm", help="Model type")
-    parser.add_argument("--archtecture", type=str, default="resnet18", help="the archtecture of the model")
+    parser.add_argument("--architecture", type=str, default="resnet18", help="the architecture of the model")
     parser.add_argument("--target_attr", type=str, default="Smiling", help="Target attribute for prediction")
     parser.add_argument("--sensitive_attr", type=str, default="Gender", help="Sensitive attribute for fairness analysis")
     parser.add_argument("--evaluation_metrics", type=str, default="acc,ap,dp,eopp,eodd", help="Evaluation metrics separated by commas, e.g., acc,ap,dp")
@@ -122,7 +121,8 @@ if __name__ == '__main__':
 
 
 
-    if args.dataset == "celeba":
+
+    if args.dataset == "celeba_torchvision":
 
         if args.target_attr == "Smiling":
             target_index = 31
@@ -148,14 +148,68 @@ if __name__ == '__main__':
             NotImplementedError("sensitive_attr is not implemented!")
 
 
-        train_dataset = torchvision.datasets.CelebA(root="/data/han/data/fairness/", split = 'train', target_type = 'attr', transform = tfms, download = False)
-        val_dataset = torchvision.datasets.CelebA(root="/data/han/data/fairness/", split = 'valid', target_type = 'attr', transform = tfms, download = False)
-        test_dataset = torchvision.datasets.CelebA(root="/data/han/data/fairness/", split = 'test', target_type = 'attr', transform = tfms, download = False)
+        train_dataset = torchvision.datasets.CelebA(root=args.data_path, split = 'train', target_type = 'attr', transform = tfms, download = False)
+        val_dataset = torchvision.datasets.CelebA(root=args.data_path, split = 'valid', target_type = 'attr', transform = tfms, download = False)
+        test_dataset = torchvision.datasets.CelebA(root=args.data_path, split = 'test', target_type = 'attr', transform = tfms, download = False)
 
         pd_attr = pd.DataFrame(train_dataset.attr, columns=train_dataset.attr_names[:40])
         y = pd_attr.iloc[:,target_index]
         s = pd_attr.iloc[:,sensitive_index]
     
+    elif args.dataset == "celeba":
+        X, attr = load_celeba_data( path= "../datasets/celeba/raw", sensitive_attribute=args.sensitive_attr)
+
+        X_np = np.stack( X["pixels"].to_list() )
+        attr_np = attr.to_numpy()
+
+        print( "X.shape: ", X.shape )
+        print( "attr_np.shape: ", attr_np.shape )
+
+
+        X_train, X_testvalid, attr_train, attr_testvalid = train_test_split(X_np, attr_np, test_size=0.2, stratify=attr_np, random_state=args.seed)
+        X_test, X_val, attr_test, attr_val = train_test_split(X_testvalid, attr_testvalid, test_size=0.5, stratify=attr_testvalid, random_state=args.seed)
+
+        print( "X_train.shape: ", X_train.shape )
+        print( "X_val.shape: ", X_val.shape )
+        print( "X_test.shape: ", X_test.shape )
+        # dataset = TensorDataset(inps, tgts)
+        X_train, attr_train = torch.from_numpy(X_train).float(), torch.from_numpy(attr_train).float()
+        X_val, attr_val = torch.from_numpy(X_val).float(), torch.from_numpy(attr_val).float()
+        X_test, attr_test = torch.from_numpy(X_test).float(), torch.from_numpy(attr_test).float()
+
+
+        train_dataset = TensorDataset(X_train, attr_train)
+        val_dataset = TensorDataset(X_val, attr_val)
+        test_dataset = TensorDataset(X_test, attr_test)
+
+        if args.target_attr == "Smiling":
+            target_index = 0
+            print( "target_attr is Smiling!" )
+        elif args.target_attr == "Wavy_Hair":
+            target_index = 1
+            print( "target_attr is Wavy_Hair!" )
+        elif args.target_attr == "Attractive":
+            target_index = 2
+            print( "target_attr is Attractive!" )
+        else:
+            NotImplementedError("target_attr is not implemented!")
+
+
+
+        if args.sensitive_attr == "Gender":
+            sensitive_index = 3
+            print( "sensitive_attr is Gender!" )
+        elif args.sensitive_attr == "Young":
+            sensitive_index = 4
+            print( "sensitive_attr is Young!" )
+        else:
+            NotImplementedError("sensitive_attr is not implemented!")
+        y = attr.iloc[:,target_index]
+        s = attr.iloc[:,sensitive_index]
+
+
+
+
     elif args.dataset == "utkface":
         X, attr = load_utkface_data( path= "../datasets/utkface/raw", sensitive_attribute=args.sensitive_attr)
 
@@ -231,25 +285,25 @@ if __name__ == '__main__':
     test_loader = torch.utils.data.DataLoader(test_dataset, shuffle=False, batch_size=args.evaluation_batch_size, num_workers=4, drop_last=False, pin_memory=True)
 
 
-    if args.archtecture == "resnet18":
+    if args.architecture == "resnet18":
         net = resnet18_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnet34":
+    elif args.architecture == "resnet34":
         net = resnet34_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnet50":
+    elif args.architecture == "resnet50":
         net = resnet50_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnet101":
+    elif args.architecture == "resnet101":
         net = resnet101_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnet152":
+    elif args.architecture == "resnet152":
         net = resnet152_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnext50":
+    elif args.architecture == "resnext50":
         net = resnext50_32x4d_encoder(pretrained=True).to(device)
-    elif args.archtecture == "resnext101":
+    elif args.architecture == "resnext101":
         net = resnext101_32x8d_encoder(pretrained=True).to(device)
-    elif args.archtecture == "wide_resnet50":
+    elif args.architecture == "wide_resnet50":
         net = wide_resnet50_2_encoder(pretrained=True).to(device)
-    elif args.archtecture == "wide_resnet101":
+    elif args.architecture == "wide_resnet101":
         net = wide_resnet101_2_encoder(pretrained=True).to(device)
-    elif args.archtecture == "swin_t":
+    elif args.architecture == "swin_t":
         net = swin_t_encoder(pretrained=True).to(device)
     else:
         NotImplementedError("archtecture is not implemented!")

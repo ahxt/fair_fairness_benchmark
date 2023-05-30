@@ -368,6 +368,22 @@ def load_utkface_data(path="../datasets/utkface/raw/", sensitive_attribute="race
     return X, attr
 
 
+# We set ethnicity and age as the sensitive attribute and the target label, respectively. 
+def load_celeba_data(path="../datasets/celeba/raw/", sensitive_attribute="race"):
+    # chagne the personal_status name to sex race and the target label to age
+
+    df = pd.read_csv( os.path.join(path, "celeba.csv"), na_values="NA", index_col=None, sep=",", header=0)
+    df['pixels']= df['pixels'].apply(lambda x:  np.array(x.split(), dtype="float32"))
+    df['pixels'] = df['pixels'].apply(lambda x: x/255)
+    df['pixels'] = df['pixels'].apply(lambda x:  np.reshape(x, (3, 48,48)))
+
+    X = df['pixels'].to_frame()
+    
+    df["Gender"] = df["Male"]
+    attr = df[ ["Smiling", "Wavy_Hair", "Attractive", "Male", "Young"  ]]
+
+    return X, attr
+
 if __name__ == '__main__':
     X, attr = load_utkface_data()
     print( type(X), type(y), type(s) )
