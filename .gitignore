@@ -15,6 +15,7 @@ datasets/*
 *.ipynb
 *test*
 *.csv
+*.sh
 
 
 
