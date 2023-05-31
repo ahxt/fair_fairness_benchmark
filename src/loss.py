@@ -79,7 +79,8 @@ class HSIC(torch.nn.Module):  # using linear
         self.s_x = s_x
         self.s_y = s_y
 
-    def forward(self, x, y, y_gt):
+    # def forward(self, x, y):
+    def forward(self, x, y):
         m, _ = x.shape  # batch size
         K = GaussianKernelMatrix(x, self.s_x).cuda()
         L = GaussianKernelMatrix(y, self.s_y).cuda()
@@ -87,7 +88,7 @@ class HSIC(torch.nn.Module):  # using linear
         # H = H.double().cuda()
         H = H.cuda()
         HSIC = torch.trace(torch.mm(L, torch.mm(H, torch.mm(K, H)))) / ((m - 1) ** 2)
-        return HSIC, torch.Tensor([0])
+        return HSIC
 
 
 
@@ -103,7 +104,7 @@ class PRLoss(torch.nn.Module):
 
         # For the mutual information,
         # Pr[y|s] = sum{(xi,si),si=s} sigma(xi,si) / #D[xs]
-        
+
         # D[xs]
         N_female = torch.tensor(output_f.shape[0]).to("cuda")
         N_male = torch.tensor(output_m.shape[0]).to("cuda")
