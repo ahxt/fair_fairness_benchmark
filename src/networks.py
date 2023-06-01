@@ -257,8 +257,6 @@ class LAFTR(nn.Module):
         if len(is_protected.shape) == 1:
             is_protected = is_protected[:, None]
 
-        # encoded = self.encoder(torch.cat((x, is_protected), dim=1))
-        # decoded = self.decoder(torch.cat((encoded, is_protected), dim=1))
         encoded, _ = self.encoder(x)
         decoded, _ = self.decoder(encoded)
 
@@ -294,7 +292,7 @@ class LAFTR(nn.Module):
         L_z = self.adv_loss(adv_pred, is_protected)
 
         # total loss
-        return self.A_x * L_x + self.A_y * L_y + self.A_z * L_z
+        return self.A_x * L_x + self.A_y * L_y + self.A_z * L_z, L_x, L_y, L_z
 
 
 

@@ -38,6 +38,9 @@ def train(model, data_loader, optimizer, device):
 def test(model, test_loader, device, prefix="test", args=None):
     model.eval()
     test_loss = 0
+    loss_x = 0
+    loss_y = 0
+    loss_z = 0
     target_hat_list = []
     target_list = []
     sensitive_list = []
@@ -46,7 +49,11 @@ def test(model, test_loader, device, prefix="test", args=None):
         for data, target, sensitive in test_loader:
             data, target, sensitive = (data.to(device), target.to(device), sensitive.to(device))
             h, decoded, output, adv_pred = model(data, sensitive)
-            test_loss += model.loss(data, target, sensitive).item()
+            loss, loss_x, loss_y, loss_z = model.loss(data, target, sensitive)
+            test_loss += loss.item()
+            loss_x += loss_x.item()
+            loss_y += loss_y.item()
+            loss_z += loss_z.item()
             target_hat_list.append(output.cpu().numpy())
             target_list.append(target.cpu().numpy())
             sensitive_list.append(sensitive.cpu().numpy())
@@ -57,22 +64,27 @@ def test(model, test_loader, device, prefix="test", args=None):
     metric = metric_evaluation(y_gt=target_list, y_pre=target_hat_list, s=sensitive_list, prefix=f"{prefix}")
 
     test_loss /= len(test_loader.dataset)
+    loss_x /= len(test_loader.dataset)
+    loss_y /= len(test_loader.dataset)
+    loss_z /= len(test_loader.dataset)
     
-
     metric[f"{prefix}/loss"] = test_loss
-
+    metric[f"{prefix}/loss_x"] = loss_x
+    metric[f"{prefix}/loss_y"] = loss_y
+    metric[f"{prefix}/loss_z"] = loss_z
 
     return metric
 
 
-def train_step(model, data, target, sensitive, optimizer, scheduler, lam=None, device=None, args=None):
+def train_step(model, data, target, sensitive, optimizer, scheduler, device=None, args=None):
     model.train()
     optimizer.zero_grad()
-    loss = model.loss(data, target, sensitive)
+    # loss, _, _, _ = model.loss(data, target, sensitive)
+    loss, loss_x, loss_y, loss_z = model.loss(data, target, sensitive)
     loss.backward()
     optimizer.step()        
     scheduler.step()
-    return model, loss.item(), None, None
+    return model, loss.item(), loss_x, loss_y, loss_z
 
 
 
@@ -80,12 +92,10 @@ def train_step(model, data, target, sensitive, optimizer, scheduler, lam=None, d
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--clf_num_epochs', type=int, default=10)
     parser.add_argument('--adv_num_epochs', type=int, default=10)
     parser.add_argument('--num_hidden', type=int, default=512)
-
 
     parser.add_argument("--data_path", type=str, default="../datasets/adult/raw")
     parser.add_argument("--dataset", type=str,default="adult",choices=["adult","kdd","acs","german", "compas" ,"bank_marketing"], help="e.g. adult,kdd,acs,german,compas,bank_marketing")
@@ -95,10 +105,9 @@ if __name__ == '__main__':
     parser.add_argument("--evaluation_metrics", type=str, default="acc,ap,dp,eopp,eodd", help="e.g. acc,ap,dp")
     parser.add_argument("--log_freq", type=int, default=1)
 
-    parser.add_argument("--lam", type=float, default=1.0)
     parser.add_argument("--A_x", type=float, default=0.1)
     parser.add_argument("--A_y", type=float, default=1.0)
-    parser.add_argument("--A_z", type=float, default=10)
+    parser.add_argument("--A_z", type=float, default=5.0)
 
     parser.add_argument("--num_training_steps", type=int, default=150)
     parser.add_argument("--batch_size", type=int, default=1024)
@@ -116,12 +125,8 @@ if __name__ == '__main__':
     table = tabulate([(k, v) for k, v in vars(args).items()], tablefmt='grid')
     print(table)
 
-
-
-
     seed_everything(seed=args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
 
     if args.dataset == "adult":
         print(f"Dataset: adult")
@@ -154,7 +159,6 @@ if __name__ == '__main__':
     if len(categorical_cols) > 0:
         X = pd.get_dummies(X, columns=categorical_cols)
 
-
     n_features = X.shape[1]
     n_classes = len(np.unique(y))
 
@@ -180,9 +184,7 @@ if __name__ == '__main__':
 
     # Create the table using the tabulate function
     table = tabulate([(k, v) for k, v in dataset_stats.items()], tablefmt='grid')
-
     print(table)
-
 
     numurical_cols = X.select_dtypes("float32").columns
     if len(numurical_cols) > 0:
@@ -200,12 +202,9 @@ if __name__ == '__main__':
         X_val[numurical_cols]   = X_val[numurical_cols].pipe(scale_df, scaler)
         X_test[numurical_cols]  = X_test[numurical_cols].pipe(scale_df, scaler)
 
-
-
     train_data = PandasDataSet(X_train, y_train, s_train)
     val_data = PandasDataSet(X_val, y_val, s_val)
     test_data = PandasDataSet(X_test, y_test, s_test)
-
 
     train_infinite_loader = InfiniteDataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
@@ -221,27 +220,20 @@ if __name__ == '__main__':
     # model definition
     # A_x: reconstruction error; A_y: prediction error; A_z: adversarial error; Loss = A_x * L_x + A_y * L_y + A_z * L_z
     laftr = LAFTR( encoder, decoder, adversary, classifier, rec_loss=None, adv_loss=None, classif_loss=None, A_x=args.A_x, A_y=args.A_y, A_z=args.A_z).to(device)
+    print(laftr)
 
     optimizer = optim.Adam( laftr.parameters(), lr=args.lr )
     scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
 
-
-    print(laftr)
     logs = []
     headers = ["Step(Tr|Val|Te)"] + args.evaluation_metrics.split(",")
-
-
-
 
     for step, (X, y, s) in enumerate(train_infinite_loader):
         if step >= args.num_training_steps:
             break
 
         X, y, s = X.to(device), y.to(device), s.to(device) 
-        laftr, loss, _, _ = train_step(model=laftr, data=X, target=y, sensitive=s, optimizer=optimizer, scheduler=scheduler, lam=args.lam,  device=device)
-
-        # advfairnet = train_step(advfairnet, train_infinite_loader, optimizer, clf_criterion, adv_criterion, device, args)
-
+        laftr, loss, loss_x, loss_y, loss_z = train_step(model=laftr, data=X, target=y, sensitive=s, optimizer=optimizer, scheduler=scheduler, device=device)
 
         if step % args.log_freq == 0 or step == 1 or step == args.num_training_steps:
             train_metrics = test(model=laftr, test_loader=train_loader, device=device,  prefix="train")
@@ -250,6 +242,9 @@ if __name__ == '__main__':
             res_dict = {}
             res_dict["training/step"] = step
             res_dict["training/loss"] = loss
+            res_dict["training/loss_x"] = loss_x
+            res_dict["training/loss_y"] = loss_y
+            res_dict["training/loss_z"] = loss_z
             res_dict["training/lr"] = optimizer.param_groups[0]["lr"]
             res_dict.update(train_metrics)
             res_dict.update(val_metrics)
