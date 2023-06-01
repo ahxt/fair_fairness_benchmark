@@ -220,8 +220,6 @@ if __name__ == "__main__":
 
 
 
-
->>>>>>> 76e93180136ce60351371be4e06f31418891e01e
     mlp_layers = [int(x) for x in args.mlp_layers.split(",")]
     advfairnet = AdvDebiasing( n_features=n_features, num_classes=1, hidden_layers=mlp_layers ).to(device)
     clf_criterion = nn.BCELoss()

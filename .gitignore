@@ -16,6 +16,7 @@ datasets/*
 *test*
 *.csv
 *.sh
+figures
 
 
 
