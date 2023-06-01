@@ -87,7 +87,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_hidden', type=int, default=512)
 
 
-
     parser.add_argument("--data_path", type=str, default="../datasets/adult/raw")
     parser.add_argument("--dataset", type=str,default="adult",choices=["adult","kdd","acs","german", "compas" ,"bank_marketing"], help="e.g. adult,kdd,acs,german,compas,bank_marketing")
     parser.add_argument("--model", type=str, default="diffdp")
@@ -97,12 +96,15 @@ if __name__ == '__main__':
     parser.add_argument("--log_freq", type=int, default=1)
 
     parser.add_argument("--lam", type=float, default=1.0)
+    parser.add_argument("--A_x", type=float, default=0.1)
+    parser.add_argument("--A_y", type=float, default=1.0)
+    parser.add_argument("--A_z", type=float, default=10)
 
-    parser.add_argument("--num_training_steps", type=int, default=250)
+    parser.add_argument("--num_training_steps", type=int, default=150)
     parser.add_argument("--batch_size", type=int, default=1024)
-    parser.add_argument("--evaluation_batch_size", type=int, default=1024000)
+    parser.add_argument("--evaluation_batch_size", type=int, default=1024)
     parser.add_argument("--lr", type=float, default=1e-2)
-    parser.add_argument("--mlp_layers", type=str, default="512,256,64", help="e.g. 512,256,64")
+    parser.add_argument("--mlp_layers", type=str, default="256,128", help="e.g. 256,128")
 
     parser.add_argument("--seed", type=int, default=1314)
     parser.add_argument("--exp_name", type=str, default="uuid")
@@ -210,14 +212,15 @@ if __name__ == '__main__':
     val_loader = DataLoader( val_data, batch_size=args.batch_size, shuffle=False)
     test_loader = DataLoader( test_data, batch_size=args.batch_size, shuffle=False)
 
-
-    encoder = MLP(n_features=n_features, num_classes=1, mlp_layers=[128]).to(device)
+    mlp_layers = [int(x) for x in args.mlp_layers.split(",")]
+    encoder = MLP(n_features=n_features, num_classes=1, mlp_layers=mlp_layers).to(device)
     decoder = MLP(n_features=128, num_classes=1, mlp_layers=[n_features]).to(device)
     adversary = MLP(n_features=128, num_classes=1, mlp_layers=[64]).to(device)
     classifier = MLP(n_features=128, num_classes=1, mlp_layers=[64]).to(device)
 
     # model definition
-    laftr = LAFTR( encoder, decoder, adversary, classifier, rec_loss=None, adv_loss=None, classif_loss=None, A_x=0.1, A_y=1, A_z=100).to(device)
+    # A_x: reconstruction error; A_y: prediction error; A_z: adversarial error; Loss = A_x * L_x + A_y * L_y + A_z * L_z
+    laftr = LAFTR( encoder, decoder, adversary, classifier, rec_loss=None, adv_loss=None, classif_loss=None, A_x=args.A_x, A_y=args.A_y, A_z=args.A_z).to(device)
 
     optimizer = optim.Adam( laftr.parameters(), lr=args.lr )
     scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
