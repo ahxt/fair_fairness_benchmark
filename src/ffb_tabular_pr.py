@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--num_training_steps", type=int, default=150)
     parser.add_argument("--batch_size", type=int, default=1024)
-    parser.add_argument("--evaluation_batch_size", type=int, default=1024000)
+    parser.add_argument("--evaluation_batch_size", type=int, default=1024)
     parser.add_argument("--lr", type=float, default=1e-2)
     parser.add_argument("--mlp_layers", type=str, default="512,256,64", help="e.g. 512,256,64")
 
