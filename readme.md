@@ -1,9 +1,9 @@
 # Fair Fairness Benchmark
 
-## 1 Overview 
+## 1. Overview 
 The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions.
 
-## 2 Our Goals
+## 2. Our Goals
 This bechmark aims to be
 
 * minimalistic
@@ -13,7 +13,7 @@ This bechmark aims to be
 * reference implementation for researchers
 * ......
 
-## 3 Fair Fairness Benchmark(FFB)
+## 3. Fair Fairness Benchmark(FFB)
 ### 3.1 Datasets
 - Adult
 - German
