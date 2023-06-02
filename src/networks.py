@@ -143,15 +143,18 @@ class CFairNet(nn.Module):
     Multi-layer perceptron with adversarial training for conditional fairness.
     """
     #  n_features, num_classes=1, hidden_layers=[60], adversary_layers=[50]
-    def __init__(self, configs, n_features, num_classes=1, hidden_layers=[60], adversary_layers=[50]):
+    def __init__(self, n_features, num_classes=1, hidden_layers=[60], adversary_layers=[50]):
         super(CFairNet, self).__init__()
         self.input_dim = n_features
         self.num_classes = num_classes
         self.num_hidden_layers = hidden_layers
         self.num_neurons = [self.input_dim] + hidden_layers
 
+        print("num_neurons", self.num_neurons)
+
         # Parameters of hidden, fully-connected layers, feature learning component.
-        self.hiddens = nn.ModuleList([nn.Linear(self.num_neurons[i], self.num_neurons[i + 1]) for i in range(self.num_hidden_layers)])
+        # self.hiddens = nn.ModuleList([nn.Linear(self.num_neurons[i], self.num_neurons[i + 1]) for i in range(self.num_hidden_layers)])
+        self.hiddens = nn.ModuleList([nn.Linear(self.num_neurons[i], self.num_neurons[i + 1]) for i in range(len(self.num_neurons)-1)])
 
         # Parameter of the final softmax classification layer.
         self.softmax = nn.Linear(self.num_neurons[-1], num_classes)
@@ -178,6 +181,7 @@ class CFairNet(nn.Module):
         h_relu = grad_reverse(h_relu)
         for j in range(self.num_classes):
             idx = labels == j
+            idx = idx.squeeze()
             c_h_relu = h_relu[idx]
             for hidden in self.adversaries[j]:
                 c_h_relu = F.relu(hidden(c_h_relu))

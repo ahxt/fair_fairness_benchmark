@@ -1,32 +1,21 @@
 
-import os
-import sys
-import matplotlib.pyplot as plt
-import numpy as np
-import logging
-import time
+# working in progress
 import argparse
-
+import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-from sklearn import metrics
-import torch.nn.functional as F
-from table_logger import TableLogger
-
+from torch.optim.lr_scheduler import StepLR
+from tabulate import tabulate
+import wandb
+import time
 
 from dataset import load_census_income_kdd_data,load_census_income_kdd_data,load_adult_data,load_german_data, load_compas_data, load_german_data, load_bank_marketing_data, load_acs_data
-from utils import seed_everything, PandasDataSet, print_metrics
+from utils import seed_everything, PandasDataSet, print_metrics, clear_lines, InfiniteDataLoader
 from metrics import metric_evaluation
 from networks import MLP, CFairNet
 
@@ -68,6 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--target_attr', type=str, default="income")
     parser.add_argument('--sensitive_attr', type=str, default="sex")
     parser.add_argument("--evaluation_metrics", type=str, default="acc,ap,dp,eopp,eodd")
+    parser.add_argument("--log_freq", type=int, default=1)
 
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--clf_num_epochs', type=int, default=10)
@@ -78,19 +68,20 @@ if __name__ == '__main__':
 
     parser.add_argument('--lam', type=float, default=1.0)
 
-    parser.add_argument('--seed', type=int, default=1314)
-    parser.add_argument('--exp_name', type=str, default="hhh_torch")
-    parser.add_argument('--round', type=int, default=0)
-    parser.add_argument('--log_interval', type=int, default=100)
+    parser.add_argument("--seed", type=int, default=1314)
+    parser.add_argument("--exp_name", type=str, default="uuid")
+    parser.add_argument("--wandb_project", type=str, default="fair_fairness_benchmark")
+
+
+
 
     args = parser.parse_args()
-
-
+    wandb.init(project=args.wandb_project, config=args)
+    table = tabulate([(k, v) for k, v in vars(args).items()], tablefmt='grid')
+    print(table)
 
     seed_everything(seed=args.seed)
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-    print("args:{}".format(args))
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if args.dataset == "adult":
         print(f"Dataset: adult")
@@ -113,56 +104,67 @@ if __name__ == '__main__':
         X, y, s = load_bank_marketing_data(path="../datasets/bank_marketing/raw", sensitive_attribute=args.sensitive_attr)
 
     elif args.dataset == "acs":
-        X, y, s = load_acs_data( path= "../datasets/acs/raw", target_attr=args.acs_target_attr, sensitive_attribute=args.sensitive_attr)
+        X, y, s = load_acs_data( path= "../datasets/acs/raw", target_attr=args.target_attr, sensitive_attribute=args.sensitive_attr)
 
     else:
-        print(f"Wrong args.dataset")
+        raise ValueError(f"Unknown dataset: {args.dataset}")
+    
 
-    print(f'X.shape: {X.shape}')
-    print(f'y.shape: {y.shape}')
-    print(f's.shape: {s.shape}')
-    print(f's.shape: {s.value_counts().to_dict()}')
-
+    categorical_cols = X.select_dtypes("string").columns
+    if len(categorical_cols) > 0:
+        X = pd.get_dummies(X, columns=categorical_cols)
 
     n_features = X.shape[1]
+    n_classes = len(np.unique(y))
 
-    # split into train/val/test set
     X_train, X_testvalid, y_train, y_testvalid, s_train, s_testvalid = train_test_split(X, y, s, test_size=0.6, stratify=y, random_state=args.seed)
     X_test, X_val, y_test, y_val, s_test, s_val = train_test_split(X_testvalid, y_testvalid, s_testvalid, test_size=0.5, stratify=y_testvalid, random_state=args.seed)
 
+    dataset_stats = {
+        "dataset": args.dataset,
+        "num_features": X.shape[1],
+        "num_classes": len(np.unique(y)),
+        "num_sensitive": len(np.unique(s)),
+        "num_samples": X.shape[0],
+        "num_train": X_train.shape[0],
+        "num_val": X_val.shape[0],
+        "num_test": X_test.shape[0],
+        "num_y1": (y.values == 1).sum(),
+        "num_y0": (y.values == 0).sum(),
+        "num_s1": (s.values == 1).sum(),
+        "num_s0": (s.values == 0).sum(),
+    }
 
+    wandb.config.update(dataset_stats)
 
-    print(f'X_train.shape: {X_train.shape}, y_train.shape: {y_train.shape}, s_train.shape: {s_train.shape}')
-    print(f'X_val.shape: {X_val.shape}, y_val.shape: {y_val.shape}, s_val.shape: {s_val.shape}')
-    print(f'X_test.shape: {X_test.shape}, y_test.shape: {y_test.shape}, s_test.shape: {s_test.shape}')
+    # Create the table using the tabulate function
+    table = tabulate([(k, v) for k, v in dataset_stats.items()], tablefmt='grid')
+    print(table)
 
+    numurical_cols = X.select_dtypes("float32").columns
+    if len(numurical_cols) > 0:
+        # scaler = StandardScaler().fit(X[numurical_cols])
 
+        def scale_df(df, scaler):
+            return pd.DataFrame(scaler.transform(df), columns=df.columns, index=df.index)
 
+        scaler = StandardScaler().fit(X_train[numurical_cols])
 
-    scaler = StandardScaler().fit(X_train)
-    scale_df = lambda df, scaler: pd.DataFrame(scaler.transform(df), columns=df.columns, index=df.index)
-    X_train = X_train.pipe(scale_df, scaler) 
-    X_val = X_val.pipe(scale_df, scaler) 
-    X_test = X_test.pipe(scale_df, scaler) 
+        def scale_df(df, scaler):
+            return pd.DataFrame(scaler.transform(df), columns=df.columns, index=df.index)
 
+        X_train[numurical_cols] = X_train[numurical_cols].pipe(scale_df, scaler)
+        X_val[numurical_cols]   = X_val[numurical_cols].pipe(scale_df, scaler)
+        X_test[numurical_cols]  = X_test[numurical_cols].pipe(scale_df, scaler)
 
     train_data = PandasDataSet(X_train, y_train, s_train)
     val_data = PandasDataSet(X_val, y_val, s_val)
     test_data = PandasDataSet(X_test, y_test, s_test)
 
+    train_infinite_loader = InfiniteDataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last=True)
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader( val_data, batch_size=args.batch_size, shuffle=False)
     test_loader = DataLoader( test_data, batch_size=args.batch_size, shuffle=False)
-
-
-    s_val = s_val.values
-    y_val = y_val.values
-
-    s_test = s_test.values
-    y_test = y_test.values
-
-    s_train = s_train.values
-    y_train = y_train.values
 
 
     advfairnet = CFairNet( n_features=n_features, num_classes=1 ).to(device)
@@ -182,18 +184,15 @@ if __name__ == '__main__':
 
             optimizer.zero_grad()
 
-            y_hat, s_hat = advfairnet(X)
+            y_hat = advfairnet(X, y)
             clf_loss = clf_criterion(y_hat, y)
-            adv_loss = adv_criterion(s_hat, s)
+
 
             loss = clf_loss + args.lam*adv_loss
             loss.backward()
             optimizer.step()        
         
         return advfairnet
-
-
-    tbl = TableLogger(columns='Epoch(Tr|Val|Te),'+ args.evaluation_metrics, float_format='{:,.2f}'.format, default_colwidth=17)
 
 
     for epoch in range(1, args.num_epochs+1):
@@ -213,11 +212,7 @@ if __name__ == '__main__':
             res_dict.update(test_metrics)
 
             res = print_metrics(res_dict, args.evaluation_metrics)
-            tbl( epoch, *res)
-
-
-    tbl.print_line( tbl.make_horizontal_border() )
-
+            print(res)
 
 
 

@@ -6,7 +6,7 @@ def fetch_data(key, entity, project):
     wandb.login(key=key)
 
     # Instantiate the wandb API
-    api = wandb.Api(timeout=60)
+    api = wandb.Api(timeout=600)
 
     # Fetch all runs in the project
     runs = api.runs(f"{entity}/{project}")
