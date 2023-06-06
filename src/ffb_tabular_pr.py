@@ -177,7 +177,6 @@ if __name__ == "__main__":
 
     # Create the table using the tabulate function
     table = tabulate([(k, v) for k, v in dataset_stats.items()], tablefmt='grid')
-
     print(table)
 
 
