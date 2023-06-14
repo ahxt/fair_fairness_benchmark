@@ -28,22 +28,8 @@ This bechmark aims to be
 
 The statistics of the datasets are as the following:
 
-| Dataset   | Task | SensAttr | #Instances | #nFeat | #cFeat | #allFeat | y0:y1 | s0:s1 (1st) | s0:s1 (2nd) |
-| --------- | ---- | -------- | ---------- | ------ | ------ | -------- | ---- | ----------- | ----------- |
-| UCI Adult | income | gender, race | 45,222 | 7 | 5 | 101 | 1:0.33 | 1:2.08 | 1:9.20 |
-| German    | credit | gender, age | 1,000 | 13 | 6 | 58 | 1:2.33 | 1:2.23 | 1:4.26 |
-| KDD Census| income | gender, race | 292,550 | 32 | 8 | 509 | 1:14.76 | 1:0.92 | 1:8.14 |
-| COMPAS    | credit | age | 6,172 | 400 | 5 | 405 | 1:0.83 | 1:4.25 | --- |
-| Bank      | credit | gender, race | 41,188 | 10 | 9 | 62 | 1:0.13 | 1:37.58 | 1:37.58 |
-| ACS-I      | income | gender, race | 195,665 | 8 | 1 | 908 | 1:0.70 | 1:0.89 | 1:1.62 |
-| ACS-E      | employment | gender, race | 378,817 | 15 | 0 | 187 | 1:0.84 | 1:1.03 | 1:1.59 |
-| ACS-P      | public | gender, race | 138,554 | 18 | 0 | 1696 | 1:0.58 | 1:1.27 | 1:1.31 |
-| ACS-M      | mobility | gender, race | 80,329 | 20 | 0 | 2678 | 1:3.26 | 1:0.95 | 1:1.32 |
-| ACS-T      | traveltime | gender, race | 172,508 | 15 | 0 | 1567 | 1:0.94 | 1:0.89 | 1:1.61 |
-| CelebA-A  | attractive | gender, age | 202,599 | --- | --- | 48x48 | 1:0.95 | 1:1.40 | 1:0.29 |
-| CelebA-W  | wavy hair | gender, age | 202,599 | --- | --- | 48x48 | 1:2.13 | 1:1.40 | 1:0.29 |
-| CelebA-S  | smiling | gender, age | 202,599 | --- | --- | 48x48 | 1:1.07 | 1:1.40 | 1:0.29 |
-| UTKFace   | age | gender, race | 23,705 | --- | --- | 48x48 | 1:1.15 | 1:1.10 | 1:1.35 |
+<p align="center">
+<img width="600" src="./img/table3.png">
 
 
 
