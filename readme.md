@@ -1,7 +1,8 @@
 # Fair Fairness Benchmark
 
 ## 1. Overview 
-The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions.
+The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions. For more information, please refer to our paper [FFB: A Fair Fairness Benchmark for In-Processing Group Fairness Methods](https://arxiv.org/abs/2306.09468).
+
 
 ## 2. Our Goals
 
@@ -67,9 +68,23 @@ python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr 
 wait;
 ```
 
-
 ## 5 Contributing
 We welcome contributions from the research community to improve and extend the Fair Fairness Benchmark. If you have an idea for a new metric or algorithm, or would like to report a bug, please open an issue or submit a pull request.
 
+
 ## 6 License
 The Fair Fairness Benchmark is released under the MIT License.
+
+---
+If you find our resources useful, please kindly cite our paper.
+
+```bibtex
+@misc{han2023ffb,
+      title={FFB: A Fair Fairness Benchmark for In-Processing Group Fairness Methods}, 
+      author={Xiaotian Han and Jianfeng Chi and Yu Chen and Qifan Wang and Han Zhao and Na Zou and Xia Hu},
+      year={2023},
+      eprint={2306.09468},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
