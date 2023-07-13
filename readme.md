@@ -65,7 +65,7 @@ The statistics of the datasets are as the following:
 <p align="center">
 <img width="600" src="./img/tradeoffs.png">
 
-## 4 How to Run
+## 4. How to Run
 
 ### 4.1 Setup
 To install the Fair Fairness Benchmark, simply clone this repository and install the required dependencies by running the following command:
@@ -73,18 +73,18 @@ To install the Fair Fairness Benchmark, simply clone this repository and install
 ```
 pip install -r requirements.txt
 ```
-### 4.2 Cmd Example
+### 4.2 Run Example
 ```
 python -u ./ffb_tabular_erm.py --dataset acs --model erm --sensitive_attr age --target_attr income --batch_size 32 --seed 89793 --log_freq 1 --num_training_steps 150
 python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr race --target_attr income --batch_size 4096 --lam 1.4 --seed 89793 --log_freq 1 --num_training_steps 150
 wait;
 ```
 
-## 5 Contributing
+## 5. Contributing
 We welcome contributions from the research community to improve and extend the Fair Fairness Benchmark. If you have an idea for a new metric or algorithm, or would like to report a bug, please open an issue or submit a pull request.
 
 
-## 6 License
+## 6. License
 The Fair Fairness Benchmark is released under the MIT License.
 
 ---
