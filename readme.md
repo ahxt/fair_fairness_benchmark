@@ -1,12 +1,17 @@
 # Fair Fairness Benchmark
 
+
+## Update:
+- [07/12/2023]: update the datasets and downloading instructions!
+
+
 ## 1. Overview 
 The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions. For more information, please refer to our paper [FFB: A Fair Fairness Benchmark for In-Processing Group Fairness Methods](https://arxiv.org/abs/2306.09468).
 
 
 ## 2. Our Goals
 
-This bechmark aims to be
+This benchmark aims to be
 
 * **minimalistic**
 * **hackable**
@@ -18,6 +23,10 @@ This bechmark aims to be
 
 ## 3. Fair Fairness Benchmark(FFB)
 ### 3.1 Datasets
+
+Please refer to the [datasets/readme.md](./datasets/readme.md) for datasets downloading instructions.
+
+
 - **UCI Adult**: U.S. census data predicting an individual's income over $50K using demographic and financial details.
 - **COMPAS**: Criminal defendants' records used to predict recidivism within two years.
 - **German Credit**: Information about credit applicants at a German bank used for credit risk rating prediction.
@@ -27,10 +36,13 @@ This bechmark aims to be
 - **CelebFaces Attributes**: 20k celebrity face images annotated with 40 binary labels of specific facial attributes.
 - **UTKFace**: Over 20k face images from diverse ethnicities and ages, annotated with age, gender, and ethnicity.
 
+
+
 The statistics of the datasets are as the following:
 
 <p align="center">
 <img width="600" src="./img/table3.png">
+
 
 
 

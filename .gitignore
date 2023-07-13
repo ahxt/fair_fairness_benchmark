@@ -6,17 +6,19 @@ trash
 .vscode
 src_tmp
 3rd_party
-datasets/acs
 benchmarks/*
 src/wandb
 wandb
 scripts
 datasets/*
+!datasets/readme.md
 *.ipynb
 *test*
 *.csv
 *.sh
 figures/*
+
+
 
 
 
