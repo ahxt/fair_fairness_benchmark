@@ -1,5 +1,5 @@
 <p align="center">
-<img width="600" src="./img/ffb_long.png">
+<img width="600" align="left" src="./img/ffb_long.png">
 
 
 ## Update:
