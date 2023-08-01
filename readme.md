@@ -1,7 +1,9 @@
-# Fair Fairness Benchmark
+<p align="center">
+<img width="600" src="./img/ffb_long.png">
 
 
 ## Update:
+- [08/01/2023]: design a logo for FFB!
 - [07/12/2023]: update the datasets and downloading instructions!
 
 
