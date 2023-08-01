@@ -1,6 +1,7 @@
 <p align="center">
 <img width="600" align="left" src="./img/ffb_long.png">
 </p>
+<br><br>
 
 ## Update:
 - [08/01/2023]: design a logo for FFB!
