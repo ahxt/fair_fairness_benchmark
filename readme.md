@@ -87,12 +87,12 @@ python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr 
 wait;
 ```
 
-### 5. Step-by-Step Guideline for Running the Fair Fairness Benchmark with Conda and wandb
+## 5. Step-by-Step Guideline for Running the Fair Fairness Benchmark with Conda and wandb
 
-#### Step 1: System Preparation
+### Step 1: System Preparation
 Ensure you have Anaconda or Miniconda installed on your system. If not, download and install from the official [Miniconda](https://docs.conda.io/en/latest/miniconda.html) site.
 
-#### Step 2: Clone the Repository
+### Step 2: Clone the Repository
 ```bash
 # Navigate to your preferred directory
 cd path/to/your/directory
@@ -101,7 +101,7 @@ cd path/to/your/directory
 git clone https://github.com/ahxt/fair_fairness_benchmark.git
 ```
 
-#### Step 3: Setting Up Conda Environment
+### Step 3: Setting Up Conda Environment
 ```bash
 # Navigate to the cloned directory
 cd fair_fairness_benchmark
@@ -116,7 +116,7 @@ conda activate ffb_env
 pip install -r requirements.txt
 ```
 
-#### Step 4: Setting up wandb
+### Step 4: Setting up wandb
 Weights & Biases is a tool used for experiment tracking. Our code in the repository uses `wandb`. We highly recomend to use wandb for tracking, if not, you can just only delete the all lines of codes that inlcudes "wandb". Ples follow these steps to setup wandb.
 
 ```bash
@@ -127,7 +127,7 @@ pip install wandb
 wandb login
 ```
 
-#### Step 5: Running the Code
+### Step 5: Running the Code
 Before running, ensure you've downloaded the necessary datasets as per the instructions in `datasets/readme.md`.
 
 ```bash
