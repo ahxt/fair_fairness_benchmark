@@ -6,6 +6,7 @@
 ##
 
 ## Update:
+- [08/18/2023]: add a jupyter notebook tutorial for running FFB!
 - [08/18/2023]: add a step-by-step guideline for running FFB!
 - [08/18/2023]: add NLP task - Jigsaw Toxic Comment Classification!
 - [08/01/2023]: design a logo for FFB!
