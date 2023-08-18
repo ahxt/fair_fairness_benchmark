@@ -6,6 +6,7 @@
 ##
 
 ## Update:
+- [08/18/2023]: add a step-by-step guideline for running FFB!
 - [08/01/2023]: design a logo for FFB!
 - [07/12/2023]: update the datasets and downloading instructions!
 
