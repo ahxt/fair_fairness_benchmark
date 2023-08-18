@@ -12,7 +12,6 @@ wandb
 scripts
 datasets/*
 !datasets/readme.md
-*.ipynb
 *test*
 *.csv
 *.sh
