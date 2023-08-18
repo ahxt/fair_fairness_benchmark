@@ -90,10 +90,18 @@ python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr 
 wait;
 ```
 
-## 5. Step-by-Step Guideline for Running the Fair Fairness Benchmark with Conda and wandb
+## 5. Step-by-Step Guideline for Running FFB
 
 ### Step 1: System Preparation
-Ensure you have Anaconda or Miniconda installed on your system. If not, download and install from the official [Miniconda](https://docs.conda.io/en/latest/miniconda.html) site.
+Ensure you have Anaconda or Miniconda installed on your system. If not, download and install from the official [Miniconda](https://docs.conda.io/en/latest/miniconda.html) site. The important python packages are:
+```bash
+pandas==1.5.3
+torch==1.13.1+cu116
+wandb==0.14.0
+scikit-learn==1.2.2
+tabulate==0.9.0
+statsmodels==0.13.5
+```
 
 ### Step 2: Clone the Repository
 ```bash
