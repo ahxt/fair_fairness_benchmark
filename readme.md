@@ -70,8 +70,10 @@ The statistics of the datasets are as the following:
 <p align="center">
 <img width="600" src="./img/tradeoffs.png">
 
-## 4. How to Run
 
+
+
+## 4. How to Run
 ### 4.1 Setup
 To install the Fair Fairness Benchmark, simply clone this repository and install the required dependencies by running the following command:
 
@@ -85,11 +87,64 @@ python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr 
 wait;
 ```
 
-## 5. Contributing
+### 5. Step-by-Step Guideline for Running the Fair Fairness Benchmark with Conda and wandb
+
+#### Step 1: System Preparation
+Ensure you have Anaconda or Miniconda installed on your system. If not, download and install from the official [Miniconda](https://docs.conda.io/en/latest/miniconda.html) site.
+
+#### Step 2: Clone the Repository
+```bash
+# Navigate to your preferred directory
+cd path/to/your/directory
+
+# Clone the repository from GitHub
+git clone https://github.com/ahxt/fair_fairness_benchmark.git
+```
+
+#### Step 3: Setting Up Conda Environment
+```bash
+# Navigate to the cloned directory
+cd fair_fairness_benchmark
+
+# Create a new conda environment
+conda create --name ffb_env python=3.8
+
+# Activate the environment
+conda activate ffb_env
+
+# Install required packages
+pip install -r requirements.txt
+```
+
+#### Step 4: Setting up wandb
+Weights & Biases is a tool used for experiment tracking. Our code in the repository uses `wandb`. We highly recomend to use wandb for tracking, if not, you can just only delete the all lines of codes that inlcudes "wandb". Ples follow these steps to setup wandb.
+
+```bash
+# Install wandb
+pip install wandb
+
+# Login to your wandb account. If you don't have one, you'll be prompted to create it.
+wandb login
+```
+
+#### Step 5: Running the Code
+Before running, ensure you've downloaded the necessary datasets as per the instructions in `datasets/readme.md`.
+
+```bash
+# Run the first example
+python -u ./ffb_tabular_erm.py --dataset acs --model erm --sensitive_attr age --target_attr income --batch_size 32 --seed 89793 --log_freq 1 --num_training_steps 150
+
+# Run the second example
+python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr race --target_attr income --batch_size 4096 --lam 1.4 --seed 89793 --log_freq 1 --num_training_steps 150
+```
+
+
+
+## 6. Contributing
 We welcome contributions from the research community to improve and extend the Fair Fairness Benchmark. If you have an idea for a new metric or algorithm, or would like to report a bug, please open an issue or submit a pull request.
 
 
-## 6. License
+## 7. License
 The Fair Fairness Benchmark is released under the MIT License.
 
 ---

@@ -1,4 +1,4 @@
-Please download datasets form the [Dropbox](https://www.dropbox.com/s/4m26g7gfgp9mimr/datasets.zip?dl=0) and unzip the datasets.zip, then unzip datasets/celeba/raw/celeba.csv.zip, you will get the following datasets folders. (Note for rearch only).
+Please download datasets form the [Dropbox](https://www.dropbox.com/s/4m26g7gfgp9mimr/datasets.zip?dl=0) and unzip the datasets.zip, then unzip datasets/celeba/raw/celeba.csv.zip, you will get the following datasets folders. (Note for research only).
 
 
 ```bash
@@ -42,6 +42,9 @@ Please download datasets form the [Dropbox](https://www.dropbox.com/s/4m26g7gfgp
 ├── compas
 │   └── raw
 │       └── compas-scores-two-years.csv
+├── jigsaw
+│   └── raw
+│       └── processed_text_features.pkl
 ├── german
 │   └── raw
 │       ├── german_credit_data.csv
