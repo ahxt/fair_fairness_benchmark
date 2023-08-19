@@ -12,6 +12,8 @@ import torchvision.transforms as transforms
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+import pickle
+
 
 
 class PandasDataSet(TensorDataset):
@@ -23,6 +25,26 @@ class PandasDataSet(TensorDataset):
         if isinstance(df, pd.Series):
             df = df.to_frame("dummy")
         return torch.from_numpy(df.values).float()
+
+
+def load_jigsaw_text_data(path="/data/han/data/fairness/jigsaw", sensitive_attribute="sex"):
+    # | 48842 instances, mix of continuous and discrete(train=32561, test=16281)
+    # | 45222 if instances with unknown values are removed(train=30162, test=15060)
+
+    with open( os.path.join(path, "processed_text_features.pkl"), 'rb') as f:
+    # with open("/data/han/data/fairness/jigsaw/processed_text_features.pkl", 'rb') as f:
+        X = pickle.load(f)
+        y = pickle.load(f)
+        s = pickle.load(f)
+
+    if sensitive_attribute=="sex":
+        s = (s[ 'gender' ] == "male").astype( int ).to_frame()
+    elif sensitive_attribute=="race":
+        s = (s[ 'race_or_ethnicity' ] == "white").astype( int ).to_frame()
+
+    return X, y, s
+
+
 
 
 def load_adult_data(path="../datasets", sensitive_attribute="sex"):
