@@ -5,17 +5,8 @@
 
 ##
 
-## Update:
-- [08/23/2023]: update all [running logs](#6-running-logs) from our $45,079$ experiments ($14,428$ GPU hours)!
-- [08/18/2023]: add a jupyter notebook tutorial for running FFB!
-- [08/18/2023]: add a step-by-step guideline for running FFB!
-- [08/18/2023]: add NLP task - Jigsaw Toxic Comment Classification!
-- [08/01/2023]: design a logo for FFB!
-- [07/12/2023]: update the datasets and downloading instructions!
-
-
 ## 1. Overview 
-The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions. For more information, please refer to our paper [FFB: A Fair Fairness Benchmark for In-Processing Group Fairness Methods](https://arxiv.org/abs/2306.09468).
+The Fair Fairness Benchmark is a PyTorch-based framework for evaluating the fairness of machine learning models. The framework is designed to be simple and customizable, making it accessible to researchers with varying levels of expertise. The benchmark includes a set of predefined fairness metrics and algorithms, but users can easily modify or add new metrics and algorithms to suit their specific research questions.
 
 
 ## 2. Our Goals
@@ -148,48 +139,4 @@ python -u ./ffb_tabular_erm.py --dataset acs --model erm --sensitive_attr age --
 
 # Run the second example
 python -u ./ffb_tabular_diffdp.py --dataset acs --model diffdp --sensitive_attr race --target_attr income --batch_size 4096 --lam 1.4 --seed 89793 --log_freq 1 --num_training_steps 150
-```
-
-## 6. Running Logs
-
-
-|     Dataset (Method)       | name           | wandb logs | #Runs  | Wall_time/GPU_Hours |
-|    :-------------          | :------------- |:------------- | :---- | :-------------- |
-|    Tabular (ERM)           | exp1\.erm      |https://wandb.ai/fair_benchmark/exp1.erm      | 190   | 35              |
-|    Tabular (Adv)           | exp1\.adv\_gr  |https://wandb.ai/fair_benchmark/exp1.adv_gr   | 2660  | 863             |
-|    Image   (ERM)           | exp2\.erm      |https://wandb.ai/fair_benchmark/exp2.erm      | 720   | 166             |
-|    Image   (DiffDP)        | exp2\.diffdp   |https://wandb.ai/fair_benchmark/exp2.diffdp   | 5040  | 1213            |
-|    Image   (DiffEopp)      | exp2\.diffeopp |https://wandb.ai/fair_benchmark/exp2.diffeopp | 5040  | 1215            |
-|    Tabular (ERM)           | exp1\.pr       |https://wandb.ai/fair_benchmark/exp1.pr       | 2850  | 312             |
-|    Tabular (HSIC)          | exp1\.hsic     |https://wandb.ai/fair_benchmark/exp1.hsic     | 2850  | 749             |
-|    Image   (ERM)           | exp2\.diffeodd |https://wandb.ai/fair_benchmark/exp2.diffeodd | 5040  | 2638            |
-|    Tabular (ERM)           | exp1\.laftr    |https://wandb.ai/fair_benchmark/exp1.laftr    | 1902  | 199             |
-|    Tabular (DiffEopp)      | exp1\.diffeopp |https://wandb.ai/fair_benchmark/exp1.diffeopp | 2660  | 533             |
-|    Tabular (DiffEodd)      | exp1\.diffeodd |https://wandb.ai/fair_benchmark/exp1.diffeodd | 2664  | 529             |
-|    Image   (Pr)            | exp2\.pr       |https://wandb.ai/fair_benchmark/exp2.pr       | 5402  | 2860            |
-|    Tabular (DiffDP)        | exp1\.diffdp   |https://wandb.ai/fair_benchmark/exp1.diffdp   | 2660  | 523             |
-|    Image   (HSIC)          | exp2\.hsic     |https://wandb.ai/fair_benchmark/exp2.hsic     | 5401  | 2593            |
-|    Total                   | total          |https://wandb.ai/fair_benchmark/              | 45079 | 14428           |
-
-
-
-## 7. Contributing
-We welcome contributions from the research community to improve and extend the Fair Fairness Benchmark. If you have an idea for a new metric or algorithm, or would like to report a bug, please open an issue or submit a pull request.
-
-
-## 8. License
-The Fair Fairness Benchmark is released under the MIT License.
-
----
-If you find our resources useful, please kindly cite our paper.
-
-```bibtex
-@misc{han2023ffb,
-      title={FFB: A Fair Fairness Benchmark for In-Processing Group Fairness Methods}, 
-      author={Xiaotian Han and Jianfeng Chi and Yu Chen and Qifan Wang and Han Zhao and Na Zou and Xia Hu},
-      year={2023},
-      eprint={2306.09468},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
 ```
