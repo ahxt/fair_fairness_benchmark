@@ -27,12 +27,12 @@ class PandasDataSet(TensorDataset):
         return torch.from_numpy(df.values).float()
 
 
-def load_jigsaw_text_data(path="/data/han/data/fairness/jigsaw", sensitive_attribute="sex"):
+def load_jigsaw_text_data(path="/data/fairness/jigsaw", sensitive_attribute="sex"):
     # | 48842 instances, mix of continuous and discrete(train=32561, test=16281)
     # | 45222 if instances with unknown values are removed(train=30162, test=15060)
 
     with open( os.path.join(path, "processed_text_features.pkl"), 'rb') as f:
-    # with open("/data/han/data/fairness/jigsaw/processed_text_features.pkl", 'rb') as f:
+    # with open("/data/fairness/jigsaw/processed_text_features.pkl", 'rb') as f:
         X = pickle.load(f)
         y = pickle.load(f)
         s = pickle.load(f)

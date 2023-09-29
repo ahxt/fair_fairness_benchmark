@@ -51,7 +51,7 @@ def test(model, test_loader, criterion, device, prefix="test", args=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default="/data/han/data/fairness")
+    parser.add_argument('--data_path', type=str, default="/data/fairness")
     parser.add_argument('--dataset', type=str, default="adult")
     parser.add_argument('--model', type=str, default="MLP")
     parser.add_argument('--target_attr', type=str, default="income")

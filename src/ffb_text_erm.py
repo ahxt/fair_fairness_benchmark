@@ -105,7 +105,7 @@ if __name__ == "__main__":
     seed_everything(seed=args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # def load_jigsaw_text_data(path="/data/han/data/fairness/jigsaw", sensitive_attributes="sex"):
+    # def load_jigsaw_text_data(path="/data/fairness/jigsaw", sensitive_attributes="sex"):
     if args.dataset == "jigsaw":
         print(f"Dataset: jigsaw")
         X, y, s = load_jigsaw_text_data(path="../datasets/jigsaw/raw", sensitive_attribute=args.sensitive_attr)
