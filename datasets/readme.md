@@ -1,4 +1,5 @@
 Update: upload processed Jigsaw dataset at [Dropbox](https://www.dropbox.com/scl/fi/wzpcv16lujxog4x29qorg/processed_text_features.pkl?rlkey=29yrv6tm0ncmdb7oc67ofp41b&st=z810d5qo&dl=0).
+
 Please download datasets from [Dropbox](https://www.dropbox.com/s/4m26g7gfgp9mimr/datasets.zip?dl=0) and unzip the datasets.zip, then unzip datasets/celeba/raw/celeba.csv.zip, you will get the following datasets folders. (Note for research only).
 
 
