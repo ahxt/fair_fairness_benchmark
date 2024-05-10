@@ -6,7 +6,7 @@
 ##
 
 ## Update:
-- [05/09/2024]: update precessed Jiasaw datasets, refer to the [datasets/readme.md](./datasets/readme.md)
+- [05/09/2024]: update processed Jiasaw datasets, refer to the [datasets/readme.md](./datasets/readme.md)
 - [08/23/2023]: update all [running logs](#6-running-logs) from our $45,079$ experiments ($14,428$ GPU hours)!
 - [08/18/2023]: add a jupyter notebook tutorial for running FFB!
 - [08/18/2023]: add a step-by-step guideline for running FFB!
