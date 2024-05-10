@@ -6,6 +6,7 @@
 ##
 
 ## Update:
+- [05/09/2024]: update precessed Jiasaw datasets, refer to the [datasets/readme.md](./datasets/readme.md)
 - [08/23/2023]: update all [running logs](#6-running-logs) from our $45,079$ experiments ($14,428$ GPU hours)!
 - [08/18/2023]: add a jupyter notebook tutorial for running FFB!
 - [08/18/2023]: add a step-by-step guideline for running FFB!
@@ -58,7 +59,7 @@ The statistics of the datasets are as the following:
 ### 3.2 In-Processing Group Fairness Methods
 - **ERM**: Standard machine learning method that minimizes the empirical risk of the training data. Serves as a common baseline for fairness methods.
 - **DiffDP, DiffEopp, DiffEodd**: Gap regularization methods for demographic parity, equalized opportunity, and equalized odds. These fairness definitions cannot be optimized directly, but gap regularization is differentiable and can be optimized using gradient descent.
-- **PRemover**: Aims to minimize the mutual information between the prediction accuracy and the sensitive attributes.
+- **PRemover**: Aim to minimize the mutual information between the prediction accuracy and the sensitive attributes.
 - **HSIC**: Minimizes the Hilbert-Schmidt Independence Criterion between the prediction accuracy and the sensitive attributes.
 - **AdvDebias**: Learns a classifier that maximizes the prediction ability and simultaneously minimizes an adversary's ability to predict the sensitive attributes from the predictions.
 - **LAFTR**: A fair representation learning method aiming to learn an intermediate representation that minimizes the classification loss, reconstruction error, and the adversary's ability to predict the sensitive attributes from the representation.
