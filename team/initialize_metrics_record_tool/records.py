@@ -12,10 +12,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
-from .extraction import PaperContent, extract_paper
-from .matcher import find_metrics, normalize_metric
-from .scoring import rank_metrics
-from .sections import split_sections
+from team.eval_metrics_tool.eval_metrics.extraction import PaperContent, extract_paper
+from team.eval_metrics_tool.eval_metrics.matcher import find_metrics, normalize_metric
+from team.eval_metrics_tool.eval_metrics.scoring import rank_metrics
+from team.eval_metrics_tool.eval_metrics.sections import split_sections
 
 MetricValue = Optional[Union[int, float]]
 
@@ -47,6 +47,17 @@ _COUNT = re.compile(r'^\s*(?:samples?|examples?|epochs?|parameters?|participants
 _DELTA = re.compile(r'\b(?:improv\w*|increas\w*|decreas\w*|gain\w*|reduc\w*)\s+(?:\w+\s+){0,3}(?:by|of)\s*$', re.I)
 # Sentence punctuation, excluding decimal points. Do not require PDF headings.
 _SENTENCE_BREAK = re.compile(r'(?<=[!?;])\s+|(?<!\d)\.\s+|(?<=\d)\.(?!\d)\s+')
+_TABLE_VALUE = re.compile(
+    rf'(?<![\w.])(?P<value>{_NUMBER})(?:\s*(?:±|\+/-)\s*{_NUMBER})?\s*%?(?!\w)'
+)
+# Common compact headers in ML result tables, including FFB Table 4. The
+# teammate's matcher deliberately treats short acronyms more conservatively in
+# prose, so table header aliases are handled here without changing that rule.
+_TABLE_HEADERS = {
+    'acc': 'Accuracy', 'auc': 'AUC', 'ap': 'mAP', 'f1': 'F1',
+    'dp': 'Demographic Parity', 'abcc': 'ABCC', 'prule': 'p%-rule',
+    'eodd': 'Equalized Odds', 'eopp': 'Equal Opportunity',
+}
 
 
 @dataclass(frozen=True)
@@ -167,8 +178,48 @@ def _crawl_tables(paper, wanted, weights, row_label):
             if labels and not values:
                 # A repeated header starts a new block, not a stale merge.
                 headers = labels
-    if row_label is not None and not found:
-        raise ValueError(f'No table row labeled {row_label!r} was found')
+    return evidence, found
+
+
+def _crawl_unruled_table_row(paper, wanted, weights, row_label):
+    """Read a selected row when PDF extraction leaves a table as plain text.
+
+    A preceding whitespace-separated metric header supplies the column order.
+    The caller must specify the row label: guessing a row from a paper with
+    several datasets or methods would produce an arbitrary baseline.
+    """
+    evidence = []
+    label = re.compile(
+        r'^\s*' + r'\s+'.join(map(re.escape, row_label.split())) + r'\s+(?=[-+]?\d)',
+        re.I,
+    )
+    for section in paper.sections:
+        if section.kind == 'references':
+            continue
+        headers = []
+        header_line = -100
+        for line_number, line in enumerate(section.text.splitlines()):
+            tokens = line.strip().split()
+            recognized = [(_TABLE_HEADERS.get(token.lower()) or normalize_metric(token))
+                          for token in tokens]
+            recognized = [name for name in recognized if name]
+            if recognized and len(recognized) >= len(tokens) - 2:
+                headers = recognized
+                header_line = line_number
+                continue
+            match = label.match(line)
+            if not match or not headers or line_number - header_line > 40:
+                continue
+            values = [float(m.group('value')) for m in _TABLE_VALUE.finditer(line[match.end():])]
+            if len(values) < len(headers):
+                continue
+            context = line.strip()
+            features = ['table_alignment'] + _section_features(section.kind)
+            score = sum(weights[f] for f in features)
+            for metric, value in zip(headers, values):
+                if metric in wanted and math.isfinite(value):
+                    evidence.append(_Evidence(metric, value, score, context,
+                                              tuple(features)))
     return evidence
 
 
@@ -240,9 +291,13 @@ def create_eval_metrics_record(
     names = ([score.name for score in rank_metrics(paper)[:top_k]]
              if metrics is None else [normalize_metric(name) or name for name in metrics])
     record = dict.fromkeys(names, None)
-    evidence = _crawl_tables(paper, record, scoring, row_label)
+    evidence, found_row = _crawl_tables(paper, record, scoring, row_label)
     if row_label is None:
         evidence.extend(_crawl_text(paper, record, scoring, window))
+    elif not evidence:
+        evidence.extend(_crawl_unruled_table_row(paper, record, scoring, row_label))
+        if not found_row and not evidence:
+            raise ValueError(f'No table row labeled {row_label!r} was found')
     ranked = _rank_values(evidence, scoring)
     for metric in record:
         values = ranked.get(metric, [])

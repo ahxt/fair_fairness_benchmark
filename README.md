@@ -1,6 +1,6 @@
 # Fair Fairness Benchmark: course project workspace
 
-This repository organizes the published [Fair Fairness Benchmark (FFB)](https://github.com/ahxt/fair_fairness_benchmark) code alongside our group's reproduction work and two supporting tools. The original benchmark is a framework for evaluating in-processing group fairness methods. Our work here is an extension and organization of that code, not a claim that we reproduced every result in the paper.
+This repository organizes the published [Fair Fairness Benchmark (FFB)](https://github.com/ahxt/fair_fairness_benchmark) code alongside our group's reproduction work and supporting tools. The original benchmark is a framework for evaluating in-processing group fairness methods. Our work here is an extension and organization of that code, not a claim that we reproduced every result in the paper.
 
 ## Progress at a glance
 
@@ -9,6 +9,7 @@ This repository organizes the published [Fair Fairness Benchmark (FFB)](https://
 | FFB reference code | Original training scripts, models, metrics, dataset instructions, tutorial, and figures under [`ffb/`](ffb/) | Available as the baseline; the original paper's figures and running logs are upstream results, not new group results. |
 | CelebA reproduction | Four ResNet-18/ResNet-20 runners for ERM and DiffDP under [`ffb/reproduce/`](ffb/reproduce/) | Scripts and a dependency/data preflight are implemented. No completed run output is committed; training still needs the CelebA data and dependencies. |
 | PDF evaluation-metric extractor | [`team/eval_metrics_tool/`](team/eval_metrics_tool/) | Rule-based PDF text/table extraction, metric matching, and ranking are implemented. Scanned PDFs and some table layouts remain unsupported. |
+| Metric record initializer | [`team/initialize_metrics_record_tool/`](team/initialize_metrics_record_tool/) | Extracts reported values into a metric-to-value record. Ambiguous or missing values remain empty for review. |
 | Local repository agent | [`team/agent/`](team/agent/) | A basic Ollama/LangChain agent can list the available reproduction scripts. It is not yet an automated experiment runner. |
 
 ## Repository map
@@ -27,11 +28,12 @@ This repository organizes the published [Fair Fairness Benchmark (FFB)](https://
 │   ├── requirements.txt          Original FFB dependency list
 │   └── readme.md                 Original FFB documentation and historical logs
 └── team/                         Group-built supporting tools
+    ├── agent/                    Local repository agent
     ├── eval_metrics_tool/        PDF evaluation-metric extractor
-    └── agent/                    Local repository agent
+    └── initialize_metrics_record_tool/  Paper-reported metric values
 ```
 
-The code in `ffb/src/`, `ffb/benchmark/`, `ffb/datasets/`, `ffb/tutorial/`, and `ffb/img/` comes from the [upstream FFB project](https://github.com/ahxt/fair_fairness_benchmark). The `ffb/reproduce/` scripts and both folders under `team/` are this group's additions. See the [FFB paper](https://arxiv.org/abs/2306.09468) for the benchmark's methods and published results.
+The code in `ffb/src/`, `ffb/benchmark/`, `ffb/datasets/`, `ffb/tutorial/`, and `ffb/img/` comes from the [upstream FFB project](https://github.com/ahxt/fair_fairness_benchmark). The `ffb/reproduce/` scripts and folders under `team/` are this group's additions. See the [FFB paper](https://arxiv.org/abs/2306.09468) for the benchmark's methods and published results.
 
 ## Development milestones
 
@@ -71,6 +73,15 @@ python -m eval_metrics /path/to/paper.pdf --top-k 5
 ```
 
 The extractor returns ranked metric names based on mentions in the PDF; it does not compute benchmark scores. Its [README](team/eval_metrics_tool/README.md) explains the scoring rules and limitations. The development requirements list test dependencies, but no test suite is currently committed.
+
+### Initialize a paper metric record
+
+```bash
+python -m team.initialize_metrics_record_tool /path/to/paper.pdf --top-k 5
+python -m team.initialize_metrics_record_tool /path/to/FFB.pdf --metric Accuracy --metric F1 --row-label "Bank Age"
+```
+
+This returns JSON with one reported value per metric where the paper gives a clear value. Use `--metric` to choose names or `--row-label` to select a model row in a table. See the [tool README](team/initialize_metrics_record_tool/README.md) for the Python API and limitations.
 
 ### Run the local agent
 
