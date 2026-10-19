@@ -1,1 +1,2 @@
 pdfplumber==0.11.10
+litellm==1.104.0
